@@ -89,6 +89,10 @@ export function calcExpectedDPR(
   const baseDist = straightDist(hl);
   const advDistObj = advantageDist(baseDist);
 
+  // Piercer Puncture tracking
+  let punctureApplied = false;
+  let pAllPriorMissed = 1.0;
+
   for (let i = 0; i < allAttacks.length; i++) {
     const atk = allAttacks[i];
 
@@ -144,8 +148,41 @@ export function calcExpectedDPR(
       piercerEV = diceExpectedValue(config.feats.piercer.die);
     }
 
+    // Piercer Puncture: once/turn, reroll one weapon die if it rolled 1
+    // EV boost = (1/sides) × ((sides+1)/2 - 1) = (sides-1)/(2*sides)
+    // Applied only on the first hit of the turn (approximation: weighted by P(no prior hit))
+    let punctureEV = 0;
+    if (config.feats.piercer.enabled && config.feats.piercer.puncture && wSides > 0) {
+      const punctureBoost = (wSides - 1) / (2 * wSides);
+      // On crit: more dice, but still only reroll one. Boost is the same per die.
+      // P(at least one die = 1) on normal hit with wDice dice = 1-(1-1/s)^n
+      // For simplicity, use per-die probability × 1 (guaranteed at least 1 die)
+      const pRollOneNormal = 1 - Math.pow((wSides - 1) / wSides, wDice);
+      const pRollOneCrit = 1 - Math.pow((wSides - 1) / wSides, wDice * 2);
+      // Puncture is once per turn — apply full value on first attack, 0 on subsequent
+      // This is a simplification; true value depends on P(miss Atk1) × P(hit Atk2) etc.
+      if (i === 0) {
+        punctureEV = pRollOneNormal * punctureBoost;
+      } else if (!punctureApplied) {
+        // Weight by probability that all prior attacks missed
+        punctureEV = pRollOneNormal * punctureBoost * pAllPriorMissed;
+      }
+      // After this attack, if we hit, puncture is used
+    }
+
     // Expected attack EV (weapon only)
     let attackEV = hcm.hit * wExpNormal + hcm.crit * (wExpCrit + piercerEV);
+
+    // Add Puncture EV (once per turn reroll)
+    if (punctureEV > 0) {
+      attackEV += (hcm.hit + hcm.crit) * punctureEV;
+    }
+    // Update puncture tracking for subsequent attacks
+    if (config.feats.piercer.enabled && config.feats.piercer.puncture && !punctureApplied) {
+      const pHitThisAtk = hcm.hit + hcm.crit;
+      if (pHitThisAtk > 0) punctureApplied = true; // Simplification: treat as used after first hittable attack
+      pAllPriorMissed *= (1 - pHitThisAtk);
+    }
 
     // Add rider damage
     for (const rider of config.riders) {

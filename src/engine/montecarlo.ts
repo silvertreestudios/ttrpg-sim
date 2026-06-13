@@ -70,6 +70,7 @@ export function simulateRound(
   let hasAdvantage = forceAdvantageAll || forceAdvantageAtk1;
   let firstHitDone = false;
   let firstPactHitDone = false;
+  let punctureUsed = false;
   const riderUsedCount = new Map<string, number>();
 
   for (let i = 0; i < attacks.length; i++) {
@@ -117,11 +118,33 @@ export function simulateRound(
     // Roll weapon damage
     const { numDice: wDice, sides: wSides } = parseDice(atk.weapon.damageDice);
     let weaponDmg = 0;
+    let lowestDieIdx = -1;
+    let lowestDieVal = Infinity;
+    const weaponRolls: number[] = [];
 
     if (wSides > 0) {
       const rolls = isCrit ? wDice * 2 : wDice;
-      for (let r = 0; r < rolls; r++) weaponDmg += rollDie(wSides);
+      for (let r = 0; r < rolls; r++) {
+        const roll = rollDie(wSides);
+        weaponRolls.push(roll);
+        weaponDmg += roll;
+        // Track lowest roll for Puncture reroll
+        if (roll < lowestDieVal) {
+          lowestDieVal = roll;
+          lowestDieIdx = r;
+        }
+      }
     }
+
+    // Piercer Puncture: once per turn, reroll one weapon die that rolled 1
+    if (config.feats.piercer.enabled && config.feats.piercer.puncture && !punctureUsed) {
+      if (lowestDieIdx >= 0 && lowestDieVal === 1 && wSides > 0) {
+        const reroll = rollDie(wSides);
+        weaponDmg += (reroll - 1); // replace the 1 with new roll
+        punctureUsed = true;
+      }
+    }
+
     weaponDmg += atk.weapon.magicBonus;
     if (atk.useAbilityMod) weaponDmg += abilMod;
     if (useSS) weaponDmg += 10;

@@ -529,7 +529,31 @@ input[type="checkbox"] {
   border: var(--border);
 }
 
-.mook-controls {
+/* CDF toggle sits between controls and chart */
+.burst-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 24px;
+  margin-bottom: 6px;
+}
+
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-400);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
   display: flex;
   align-items: center;
   gap: 8px;
