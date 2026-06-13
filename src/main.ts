@@ -67,6 +67,11 @@ function applyPreset(preset: CharacterConfig): CharacterConfig {
       flanking: false,
     },
     weaponMastery: preset.weaponMastery ?? { vex: false },
+    actionSurge: preset.actionSurge ?? {
+      enabled: false,
+      extraAttacks: [],
+      usesPerRest: 1,
+    },
   };
 }
 
@@ -91,6 +96,14 @@ function renderDPRCurveTab(): void {
     result.scenarios,
     result.breakpoints,
   );
+
+  // Show/hide the Action Surge comparison panel in burst tab
+  const surgeCompareEl = document.getElementById('actionsurge-comparison');
+  if (surgeCompareEl) {
+    surgeCompareEl.style.display =
+      (config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0)
+        ? '' : 'none';
+  }
 }
 
 function renderHexTab(): void {
@@ -275,6 +288,190 @@ function renderMCResult(result: MonteCarloResult): void {
   if (container) container.innerHTML = html;
 }
 
+// ============================================================
+// Action Surge Comparison (Normal vs Surge rounds)
+// ============================================================
+
+let compareNormalResult: MonteCarloResult | null = null;
+let compareSurgeResult: MonteCarloResult | null = null;
+let compareWorker: Worker | null = null;
+let comparePhase: 'normal' | 'surge' | null = null;
+
+function runCompare(): void {
+  if (!(config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0)) return;
+
+  if (compareWorker) {
+    compareWorker.terminate();
+    compareWorker = null;
+  }
+  compareNormalResult = null;
+  compareSurgeResult = null;
+
+  const simCount = parseInt((document.getElementById('sim-count') as HTMLSelectElement)?.value ?? '100000');
+  const targetAC = parseInt((document.getElementById('burst-ac') as HTMLInputElement)?.value ?? '16');
+
+  const progressContainer = document.getElementById('mc-compare-progress');
+  const progressFill = document.getElementById('mc-compare-progress-fill');
+  const statusEl = document.getElementById('mc-compare-status');
+  const runBtn = document.getElementById('btn-run-mc-compare') as HTMLButtonElement;
+
+  if (progressContainer) progressContainer.style.display = '';
+  if (runBtn) runBtn.disabled = true;
+
+  function startPhase(surge: boolean): void {
+    comparePhase = surge ? 'surge' : 'normal';
+    if (statusEl) statusEl.textContent = surge ? 'Simulating Action Surge round...' : 'Simulating normal round...';
+
+    compareWorker = createWorker();
+
+    compareWorker.onmessage = (e: MessageEvent<WorkerProgress | WorkerResult>) => {
+      const msg = e.data;
+      if (msg.type === 'progress') {
+        const pct = Math.round(msg.pct * 100);
+        if (progressFill) progressFill.style.width = `${pct}%`;
+      } else if (msg.type === 'result' && msg.resultType === 'montecarlo') {
+        const result = msg.data as MonteCarloResult;
+        if (comparePhase === 'normal') {
+          compareNormalResult = result;
+          // Now run surge
+          startPhase(true);
+        } else {
+          compareSurgeResult = result;
+          if (progressContainer) progressContainer.style.display = 'none';
+          if (runBtn) runBtn.disabled = false;
+          if (compareNormalResult && compareSurgeResult) {
+            renderCompareResult(compareNormalResult, compareSurgeResult, simCount);
+          }
+          compareWorker = null;
+        }
+      }
+    };
+
+    compareWorker.onerror = (e: ErrorEvent) => {
+      if (progressContainer) progressContainer.style.display = 'none';
+      if (runBtn) runBtn.disabled = false;
+      if (statusEl) statusEl.textContent = `Error: ${e.message}`;
+      compareWorker = null;
+    };
+
+    const req: WorkerRequest = {
+      type: 'montecarlo',
+      config,
+      targetAC,
+      simCount,
+      useActionSurge: surge,
+    };
+    compareWorker.postMessage(req);
+  }
+
+  startPhase(false);
+}
+
+function renderCompareResult(normal: MonteCarloResult, surge: MonteCarloResult, simCount: number): void {
+  // Overlay histogram comparison
+  const normalBins = buildHistogramBins(
+    normal.histogram as unknown as { damage: number; count: number }[],
+    simCount, normal.percentiles.p50, normal.percentiles.p90,
+  );
+  const surgeBins = buildHistogramBins(
+    surge.histogram as unknown as { damage: number; count: number }[],
+    simCount, surge.percentiles.p50, surge.percentiles.p90,
+  );
+
+  // Align bins: pad to same length
+  const maxLen = Math.max(normalBins.length, surgeBins.length);
+  const labels = Array.from({ length: maxLen }, (_, i) => normalBins[i]?.label ?? surgeBins[i]?.label ?? `${i * 5}-${i * 5 + 4}`);
+  const normalData = Array.from({ length: maxLen }, (_, i) => normalBins[i]?.count ?? 0);
+  const surgeData = Array.from({ length: maxLen }, (_, i) => surgeBins[i]?.count ?? 0);
+
+  renderGroupedBar(
+    'chart-burst-compare',
+    labels,
+    [
+      { label: 'Normal Round', data: normalData, color: '#6366f1' },
+      { label: 'Action Surge Round', data: surgeData, color: '#ef4444' },
+    ],
+    'Probability',
+    'Damage',
+  );
+
+  // Comparison summary table
+  const nP = normal.percentiles;
+  const sP = surge.percentiles;
+
+  const container = document.getElementById('table-burst-compare');
+  if (!container) return;
+
+  const deltaClass = (delta: number) => delta > 0 ? 'cell-highlight' : '';
+  const fmt1 = (n: number) => n.toFixed(1);
+  const fmtPct = (n: number) => `${(n * 100).toFixed(1)}%`;
+  const fmtDelta = (a: number, b: number) => {
+    const d = b - a;
+    return `<span class="${deltaClass(d)}">${d >= 0 ? '+' : ''}${fmt1(d)}</span>`;
+  };
+
+  let html = `
+    <h3>Normal vs Action Surge — Side-by-Side</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Stat</th>
+          <th class="text-right">Normal Round</th>
+          <th class="text-right">Action Surge</th>
+          <th class="text-right">Delta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Average</td><td class="text-right">${fmt1(nP.avg)}</td><td class="text-right">${fmt1(sP.avg)}</td><td class="text-right">${fmtDelta(nP.avg, sP.avg)}</td></tr>
+        <tr><td>Median (P50)</td><td class="text-right">${fmt1(nP.p50)}</td><td class="text-right">${fmt1(sP.p50)}</td><td class="text-right">${fmtDelta(nP.p50, sP.p50)}</td></tr>
+        <tr><td>P75</td><td class="text-right">${fmt1(nP.p75)}</td><td class="text-right">${fmt1(sP.p75)}</td><td class="text-right">${fmtDelta(nP.p75, sP.p75)}</td></tr>
+        <tr><td>P90</td><td class="text-right">${fmt1(nP.p90)}</td><td class="text-right">${fmt1(sP.p90)}</td><td class="text-right">${fmtDelta(nP.p90, sP.p90)}</td></tr>
+        <tr><td>P99 (Nova)</td><td class="text-right">${fmt1(nP.p99)}</td><td class="text-right">${fmt1(sP.p99)}</td><td class="text-right">${fmtDelta(nP.p99, sP.p99)}</td></tr>
+        <tr><td>Max</td><td class="text-right">${fmt1(nP.max)}</td><td class="text-right">${fmt1(sP.max)}</td><td class="text-right">${fmtDelta(nP.max, sP.max)}</td></tr>
+        <tr><td>Whiff Rate</td><td class="text-right">${fmtPct(nP.whiffRate)}</td><td class="text-right">${fmtPct(sP.whiffRate)}</td><td class="text-right"></td></tr>
+      </tbody>
+    </table>
+  `;
+
+  // Crit probability section
+  const nCr = normal.critRounds;
+  const sCr = surge.critRounds;
+  html += `
+    <h3>Crit Probability (Normal vs Action Surge)</h3>
+    <table class="data-table">
+      <thead><tr><th>Round Type</th><th class="text-right">Normal</th><th class="text-right">Action Surge</th></tr></thead>
+      <tbody>
+        <tr><td>No crit</td><td class="text-right">${fmtPct(nCr.noCrit.freq)}</td><td class="text-right">${fmtPct(sCr.noCrit.freq)}</td></tr>
+        <tr><td>Single crit</td><td class="text-right">${fmtPct(nCr.singleCrit.freq)}</td><td class="text-right">${fmtPct(sCr.singleCrit.freq)}</td></tr>
+        <tr><td>Double+ crit</td><td class="text-right">${fmtPct(nCr.doubleCrit.freq)}</td><td class="text-right ${sCr.doubleCrit.freq > nCr.doubleCrit.freq ? 'cell-highlight' : ''}">${fmtPct(sCr.doubleCrit.freq)}</td></tr>
+        <tr><td><strong>At least 1 crit</strong></td><td class="text-right"><strong>${fmtPct(1 - nCr.noCrit.freq)}</strong></td><td class="text-right cell-highlight"><strong>${fmtPct(1 - sCr.noCrit.freq)}</strong></td></tr>
+      </tbody>
+    </table>
+  `;
+
+  // Kill probability comparison
+  html += `
+    <h3>One-Round Kill Probability (Normal vs Action Surge)</h3>
+    <table class="data-table">
+      <thead><tr><th>Target HP</th><th class="text-right">Normal</th><th class="text-right">Action Surge</th><th class="text-right">Delta</th></tr></thead>
+      <tbody>
+        ${nP.killProbs.map((kp, i) => {
+          const sKp = sP.killProbs[i] ?? { hp: kp.hp, prob: 0 };
+          const delta = sKp.prob - kp.prob;
+          return `<tr>
+            <td>${kp.hp}</td>
+            <td class="text-right ${kp.prob > 0.5 ? 'cell-highlight' : ''}">${fmtPct(kp.prob)}</td>
+            <td class="text-right ${sKp.prob > 0.5 ? 'cell-highlight' : ''}">${fmtPct(sKp.prob)}</td>
+            <td class="text-right ${deltaClass(delta)}">${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(1)}%</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = html;
+}
+
 function renderMookResult(result: MookSimResult): void {
   // Kill distribution chart
   const maxKills = result.killDistribution.length - 1;
@@ -422,6 +619,7 @@ function runMonteCarlo(): void {
 
   const simCount = parseInt((document.getElementById('sim-count') as HTMLSelectElement)?.value ?? '100000');
   const targetAC = parseInt((document.getElementById('burst-ac') as HTMLInputElement)?.value ?? '16');
+  const useActionSurge = (document.getElementById('burst-use-actionsurge') as HTMLInputElement)?.checked ?? false;
 
   const progressContainer = document.getElementById('mc-progress');
   const progressFill = document.getElementById('mc-progress-fill');
@@ -462,6 +660,7 @@ function runMonteCarlo(): void {
     config,
     targetAC,
     simCount,
+    useActionSurge,
   };
   mcWorker.postMessage(req);
 }

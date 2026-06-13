@@ -75,6 +75,12 @@ export interface FightingStyleConfig {
   bonus: number;
 }
 
+export interface ActionSurgeConfig {
+  enabled: boolean;
+  extraAttacks: AttackConfig[];  // The additional attacks granted by Action Surge
+  usesPerRest: number;           // 1 at levels 2-16, 2 at level 17+
+}
+
 export interface CharacterConfig {
   name: string;
   level: number;
@@ -87,6 +93,7 @@ export interface CharacterConfig {
   weaponMastery: WeaponMasteryConfig;
   riders: RiderConfig[];
   advantageSources: AdvantageSourcesConfig;
+  actionSurge: ActionSurgeConfig;
 }
 
 // ============================================================
@@ -176,6 +183,7 @@ export interface WorkerRequest {
   mookHP?: number;
   mookAC?: number;
   hasSurprise?: boolean;
+  useActionSurge?: boolean;
 }
 
 export interface WorkerProgress {

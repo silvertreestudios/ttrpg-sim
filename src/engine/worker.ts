@@ -16,6 +16,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
         simCount: req.simCount,
         targetAC: req.targetAC,
         hexActive: false,
+        useActionSurge: req.useActionSurge ?? false,
       },
       (pct: number) => {
         const progress: WorkerProgress = { type: 'progress', pct };
