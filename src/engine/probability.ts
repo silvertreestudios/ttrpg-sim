@@ -29,6 +29,7 @@ export interface CalcOptions {
   forceAdvantageAll?: boolean;  // Flanking forces advantage on all attacks
   hexActive?: boolean;          // Hex/concentration is active
   hexRiderIndex?: number;       // Which rider index is Hex
+  useActionSurge?: boolean;     // Include Action Surge extra attacks
 }
 
 /** Full expected DPR for a character config vs a given AC */
@@ -43,6 +44,7 @@ export function calcExpectedDPR(
     forceAdvantageAtk1 = false,
     forceAdvantageAll = false,
     hexActive = false,
+    useActionSurge = false,
   } = opts;
 
   const hl = config.feats.halflingLucky;
@@ -51,45 +53,44 @@ export function calcExpectedDPR(
   const abilMod = config.abilityMod;
   const fightingBonus = config.fightingStyle.bonus;
 
-  // Compute expected damage per attack, accounting for Vex chaining
-  // Vex: if an attack HITS (not misses), next attack has advantage.
-  // We model this as a probability tree:
-  //   State before attack i: P(has_advantage)
-  //   After attack i hits: next gets advantage
-  //   After attack i misses/crits (crit is also a hit): next gets advantage
+  // Build the full ordered attack sequence.
+  // Action Surge order: Main1, Main2, Surge1, Surge2, OffHand
+  // We do this by splitting normal attacks into "main" (pact weapon) and "off-hand",
+  // inserting surge attacks after the main attacks, then appending off-hand last.
+  // Per the spec: off-hand is the bonus action attack, always last.
+  const normalAttacks = [...config.attacks].sort((a, b) => a.order - b.order);
 
-  const attacks = [...config.attacks].sort((a, b) => a.order - b.order);
+  let allAttacks: AttackConfig[];
+  if (useActionSurge && config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) {
+    // Partition normal attacks into main-hand (pact) and off-hand
+    // Off-hand is the last non-pact attack by order convention
+    const mainAttacks = normalAttacks.filter(a => a.isPactWeapon);
+    const offHandAttacks = normalAttacks.filter(a => !a.isPactWeapon);
+
+    // Surge attacks are extra main-hand attacks; insert them after normal main attacks
+    const surgeAttacks = config.actionSurge.extraAttacks;
+
+    // Final sequence: main attacks → surge attacks → off-hand attacks
+    allAttacks = [...mainAttacks, ...surgeAttacks, ...offHandAttacks];
+  } else {
+    allAttacks = normalAttacks;
+  }
+
   const vexEnabled = config.weaponMastery.vex;
 
-  // We track P(advantage going into attack i) via a probability-weighted sum.
-  // Because we need to handle the Vex chain, we'll use expected hit rates.
-  // P(adv_i) for attack i:
-  //   Atk 1: forced by surprise/lucky/flanking, else no advantage initially
-  //   Atk i+1: P(adv) = P(Atk i hit or crit) if vex enabled, else 0
-
-  // We'll compute iteratively, tracking "expected advantage probability"
-  // This is an approximation for the conditional — we use the average P(hit)
-  // from the previous attack's distribution to seed the next.
-
-  // Initialize: forced advantage means P=1 going into attack 0; the end-of-loop
-  // update will naturally replace it for subsequent attacks.
   let pAdvantageForNext = (forceAdvantageAll || forceAdvantageAtk1) ? 1 : 0;
 
   let totalEV = 0;
 
-  // Track if any attack was a Pact Weapon hit (for Thirsting Blade)
-  // For exact calc, we compute probability of "first pact weapon hit" occurring
-  let pFirstPactHitUsed = 0; // probability that Thirsting Blade has already fired
-
-  // For "first hit per turn" riders
+  let pFirstPactHitUsed = 0;
   let pFirstHitUsed = 0;
 
   // Compute distributions once — they don't depend on per-attack values
   const baseDist = straightDist(hl);
   const advDistObj = advantageDist(baseDist);
 
-  for (let i = 0; i < attacks.length; i++) {
-    const atk = attacks[i];
+  for (let i = 0; i < allAttacks.length; i++) {
+    const atk = allAttacks[i];
 
     // Determine SS usage for this attack
     let useSS = false;
@@ -329,6 +330,32 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
         forceAdvantageAll: forceAdvAll,
       })),
     });
+  }
+
+  // Action Surge scenario (if enabled in config)
+  if (config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) {
+    if (hasSS) {
+      scenarios.push({
+        label: 'Action Surge (All SS)',
+        color: '#ef4444',
+        data: acs.map(ac => calcExpectedDPR(config, ac, {
+          overrideSS: true,
+          useActionSurge: true,
+          forceAdvantageAtk1: forceAdv1,
+          forceAdvantageAll: forceAdvAll,
+        })),
+      });
+    } else {
+      scenarios.push({
+        label: 'Action Surge',
+        color: '#ef4444',
+        data: acs.map(ac => calcExpectedDPR(config, ac, {
+          useActionSurge: true,
+          forceAdvantageAtk1: forceAdv1,
+          forceAdvantageAll: forceAdvAll,
+        })),
+      });
+    }
   }
 
   // With Hex active

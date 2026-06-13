@@ -22,6 +22,7 @@ export interface SimOptions {
   skipSSAtk1?: boolean;
   forceAdvantageAtk1?: boolean;
   forceAdvantageAll?: boolean;
+  useActionSurge?: boolean;
 }
 
 export interface RoundResult {
@@ -41,6 +42,7 @@ export function simulateRound(
     skipSSAtk1 = false,
     forceAdvantageAtk1 = false,
     forceAdvantageAll = false,
+    useActionSurge = false,
   } = opts;
 
   const hl = config.feats.halflingLucky;
@@ -50,7 +52,18 @@ export function simulateRound(
   const fightingBonus = config.fightingStyle.bonus;
   const vexEnabled = config.weaponMastery.vex;
 
-  const attacks = [...config.attacks].sort((a, b) => a.order - b.order);
+  // Build the full ordered attack sequence, same logic as probability.ts
+  const normalAttacks = [...config.attacks].sort((a, b) => a.order - b.order);
+
+  let attacks: AttackConfig[];
+  if (useActionSurge && config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) {
+    const mainAttacks = normalAttacks.filter(a => a.isPactWeapon);
+    const offHandAttacks = normalAttacks.filter(a => !a.isPactWeapon);
+    const surgeAttacks = config.actionSurge.extraAttacks;
+    attacks = [...mainAttacks, ...surgeAttacks, ...offHandAttacks];
+  } else {
+    attacks = normalAttacks;
+  }
 
   let totalDamage = 0;
   let critCount = 0;

@@ -78,5 +78,27 @@
     "surprise": false,
     "luckyOnAtk1": false,
     "flanking": false
+  },
+  "actionSurge": {
+    "enabled": true,
+    "extraAttacks": [
+      {
+        "name": "Surge Attack 1",
+        "weapon": { "damageDice": "1d6", "magicBonus": 2 },
+        "isPactWeapon": true,
+        "useAbilityMod": true,
+        "useSharpshooter": true,
+        "order": 3
+      },
+      {
+        "name": "Surge Attack 2",
+        "weapon": { "damageDice": "1d6", "magicBonus": 2 },
+        "isPactWeapon": true,
+        "useAbilityMod": true,
+        "useSharpshooter": true,
+        "order": 4
+      }
+    ],
+    "usesPerRest": 1
   }
 }

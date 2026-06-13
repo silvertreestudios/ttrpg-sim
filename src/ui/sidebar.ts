@@ -56,6 +56,9 @@ function renderFromConfig(): void {
   // Attacks list
   renderAttacksList();
 
+  // Action Surge section
+  renderActionSurgeSection();
+
   // Riders list
   renderRidersList();
 }
@@ -158,6 +161,119 @@ function renderAttacksList(): void {
       _config.attacks.splice(idx, 1);
       _config.attacks.forEach((a, i) => { a.order = i + 1; });
       renderAttacksList();
+      emit();
+    });
+  });
+}
+
+function renderActionSurgeSection(): void {
+  // Ensure config has actionSurge field (backwards compat)
+  if (!_config.actionSurge) {
+    _config.actionSurge = {
+      enabled: false,
+      extraAttacks: [],
+      usesPerRest: 1,
+    };
+  }
+
+  const as = _config.actionSurge;
+
+  // Update the enable checkbox
+  setChecked('cfg-actionsurge', as.enabled);
+
+  // Show/hide sub-section
+  const subEl = document.getElementById('actionsurge-sub');
+  if (subEl) subEl.style.display = as.enabled ? '' : 'none';
+
+  // Update uses count
+  setVal('cfg-actionsurge-uses', as.usesPerRest);
+
+  // Render surge attacks list
+  const container = document.getElementById('surge-attacks-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  as.extraAttacks.forEach((atk, idx) => {
+    const div = document.createElement('div');
+    div.className = 'attack-card';
+    div.innerHTML = `
+      <div class="attack-header">
+        <span class="attack-num">Surge Attack ${idx + 1}</span>
+        <button class="btn-icon btn-remove-surge" data-idx="${idx}" title="Remove">✕</button>
+      </div>
+      <div class="field-row">
+        <label>Name</label>
+        <input type="text" class="input-text surge-name" data-idx="${idx}" value="${escapeHtml(atk.name)}" />
+      </div>
+      <div class="field-row">
+        <label>Damage Dice</label>
+        <select class="input-select surge-dice" data-idx="${idx}">
+          ${['1d4','1d6','1d8','1d10','1d12','2d6'].map(d =>
+            `<option value="${d}" ${d === atk.weapon.damageDice ? 'selected' : ''}>${d}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Magic Bonus</label>
+        <select class="input-select surge-magic" data-idx="${idx}">
+          ${[0,1,2,3].map(b =>
+            `<option value="${b}" ${b === atk.weapon.magicBonus ? 'selected' : ''}>+${b}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Uses Ability Mod</label>
+        <input type="checkbox" class="surge-abilmod" data-idx="${idx}" ${atk.useAbilityMod ? 'checked' : ''} />
+      </div>
+      <div class="field-row">
+        <label>Special Weapon (Pact/etc)</label>
+        <input type="checkbox" class="surge-pact" data-idx="${idx}" ${atk.isPactWeapon ? 'checked' : ''} />
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  // Bind surge attack inputs
+  container.querySelectorAll('.surge-name').forEach(el => {
+    el.addEventListener('input', (e) => {
+      const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+      _config.actionSurge.extraAttacks[idx].name = (e.target as HTMLInputElement).value;
+      emit();
+    });
+  });
+  container.querySelectorAll('.surge-dice').forEach(el => {
+    el.addEventListener('change', (e) => {
+      const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+      _config.actionSurge.extraAttacks[idx].weapon.damageDice = (e.target as HTMLSelectElement).value;
+      emit();
+    });
+  });
+  container.querySelectorAll('.surge-magic').forEach(el => {
+    el.addEventListener('change', (e) => {
+      const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+      _config.actionSurge.extraAttacks[idx].weapon.magicBonus = parseInt((e.target as HTMLSelectElement).value);
+      emit();
+    });
+  });
+  container.querySelectorAll('.surge-abilmod').forEach(el => {
+    el.addEventListener('change', (e) => {
+      const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+      _config.actionSurge.extraAttacks[idx].useAbilityMod = (e.target as HTMLInputElement).checked;
+      emit();
+    });
+  });
+  container.querySelectorAll('.surge-pact').forEach(el => {
+    el.addEventListener('change', (e) => {
+      const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+      _config.actionSurge.extraAttacks[idx].isPactWeapon = (e.target as HTMLInputElement).checked;
+      emit();
+    });
+  });
+  container.querySelectorAll('.btn-remove-surge').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+      _config.actionSurge.extraAttacks.splice(idx, 1);
+      renderActionSurgeSection();
       emit();
     });
   });
@@ -286,6 +402,46 @@ function bindStaticListeners(): void {
   bindCheck('cfg-surprise', c => { _config.advantageSources.surprise = c; });
   bindCheck('cfg-flanking', c => { _config.advantageSources.flanking = c; });
   bindCheck('cfg-luckyatk1', c => { _config.advantageSources.luckyOnAtk1 = c; });
+
+  // Action Surge
+  bindCheck('cfg-actionsurge', c => {
+    if (!_config.actionSurge) {
+      _config.actionSurge = { enabled: false, extraAttacks: [], usesPerRest: 1 };
+    }
+    _config.actionSurge.enabled = c;
+    renderActionSurgeSection();
+  });
+  bind('cfg-actionsurge-uses', 'change', v => {
+    if (!_config.actionSurge) return;
+    _config.actionSurge.usesPerRest = parseInt(v);
+  });
+
+  // Add surge attack (mirrors main hand attacks)
+  document.getElementById('btn-add-surge-attack')?.addEventListener('click', () => {
+    if (!_config.actionSurge) return;
+    // Mirror the first pact weapon attack as default
+    const mainHandRef = _config.attacks.find(a => a.isPactWeapon) ?? _config.attacks[0];
+    const newAtk: AttackConfig = mainHandRef
+      ? {
+          name: `Surge Attack ${_config.actionSurge.extraAttacks.length + 1}`,
+          weapon: { ...mainHandRef.weapon },
+          isPactWeapon: mainHandRef.isPactWeapon,
+          useAbilityMod: mainHandRef.useAbilityMod,
+          useSharpshooter: mainHandRef.useSharpshooter,
+          order: _config.actionSurge.extraAttacks.length + 1,
+        }
+      : {
+          name: `Surge Attack ${_config.actionSurge.extraAttacks.length + 1}`,
+          weapon: { damageDice: '1d6', magicBonus: 0 },
+          isPactWeapon: false,
+          useAbilityMod: true,
+          useSharpshooter: true,
+          order: _config.actionSurge.extraAttacks.length + 1,
+        };
+    _config.actionSurge.extraAttacks.push(newAtk);
+    renderActionSurgeSection();
+    emit();
+  });
 
   // Add attack
   document.getElementById('btn-add-attack')?.addEventListener('click', () => {
