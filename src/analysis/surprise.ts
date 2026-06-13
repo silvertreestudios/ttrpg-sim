@@ -8,7 +8,7 @@ import { calcExpectedDPR } from '../engine/probability.js';
 export interface SurpriseScenario {
   label: string;
   color: string;
-  dprs: number[];
+  data: number[];
 }
 
 export interface SurpriseAnalysisResult {
@@ -38,7 +38,7 @@ export function analyzeSurprise(config: CharacterConfig): SurpriseAnalysisResult
   scenarios.push({
     label: 'Surprise (no spell)',
     color: '#f59e0b',
-    dprs: acs.map(ac => calcExpectedDPR(config, ac, {
+    data: acs.map(ac => calcExpectedDPR(config, ac, {
       overrideSS: hasSS ? true : null,
       forceAdvantageAtk1: true,
       hexActive: false,
@@ -50,7 +50,7 @@ export function analyzeSurprise(config: CharacterConfig): SurpriseAnalysisResult
     scenarios.push({
       label: 'Surprise + Spell pre-cast',
       color: '#10b981',
-      dprs: acs.map(ac => calcExpectedDPR(config, ac, {
+      data: acs.map(ac => calcExpectedDPR(config, ac, {
         overrideSS: hasSS ? true : null,
         forceAdvantageAtk1: true,
         hexActive: true,
@@ -62,7 +62,7 @@ export function analyzeSurprise(config: CharacterConfig): SurpriseAnalysisResult
   scenarios.push({
     label: 'Normal round',
     color: '#6366f1',
-    dprs: acs.map(ac => calcExpectedDPR(config, ac, {
+    data: acs.map(ac => calcExpectedDPR(config, ac, {
       overrideSS: hasSS ? true : null,
       hexActive: false,
     })),

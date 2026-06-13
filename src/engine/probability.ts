@@ -15,9 +15,7 @@
 import type { CharacterConfig, AttackConfig, RiderConfig } from '../types.js';
 import { parseDice, diceExpectedValue, critExpectedValue } from './dice.js';
 import {
-  getD20Dist,
   computeHitProbs,
-  type AdvantageState,
   type HitCritMiss,
   straightDist,
   advantageDist,
@@ -73,11 +71,9 @@ export function calcExpectedDPR(
   // This is an approximation for the conditional — we use the average P(hit)
   // from the previous attack's distribution to seed the next.
 
-  let pAdvantageForNext = 0; // starts as 0 (no advantage on Atk1 unless forced)
-
-  // Override: check for forced advantages
-  if (forceAdvantageAll) pAdvantageForNext = 1;
-  else if (forceAdvantageAtk1) pAdvantageForNext = 1;
+  // Initialize: forced advantage means P=1 going into attack 0; the end-of-loop
+  // update will naturally replace it for subsequent attacks.
+  let pAdvantageForNext = (forceAdvantageAll || forceAdvantageAtk1) ? 1 : 0;
 
   let totalEV = 0;
 
@@ -88,22 +84,12 @@ export function calcExpectedDPR(
   // For "first hit per turn" riders
   let pFirstHitUsed = 0;
 
+  // Compute distributions once — they don't depend on per-attack values
+  const baseDist = straightDist(hl);
+  const advDistObj = advantageDist(baseDist);
+
   for (let i = 0; i < attacks.length; i++) {
     const atk = attacks[i];
-
-    // Determine advantage state for this attack
-    let advState: AdvantageState = 'normal';
-
-    if (forceAdvantageAll) {
-      advState = 'advantage';
-    } else if (i === 0 && (forceAdvantageAtk1) && !forceAdvantageAll) {
-      advState = 'advantage';
-      pAdvantageForNext = 0; // reset after atk1 forced
-    } else if (vexEnabled && pAdvantageForNext > 0) {
-      // Vex chain: we blend advantage and normal distributions
-      // EV(damage) = pAdv * EV(damage | adv) + (1 - pAdv) * EV(damage | normal)
-      // We'll compute both and blend
-    }
 
     // Determine SS usage for this attack
     let useSS = false;
@@ -121,26 +107,8 @@ export function calcExpectedDPR(
     // Needed roll on d20
     const needed = ac - hitBonus;
 
-    // Get distributions
-    const baseDist = straightDist(hl);
-    const advDistObj = advantageDist(baseDist);
-
-    let hcmNormal: HitCritMiss;
-    let hcmAdv: HitCritMiss;
-
-    if (needed <= 1) {
-      // Always hits (or crits) on any roll except nat 1 handled inside
-      hcmNormal = computeHitProbs(baseDist, needed, critRange);
-      hcmAdv = computeHitProbs(advDistObj, needed, critRange);
-    } else {
-      hcmNormal = computeHitProbs(baseDist, needed, critRange);
-      hcmAdv = computeHitProbs(advDistObj, needed, critRange);
-    }
-
-    // Override for i === 0 with forced advantage
-    if (forceAdvantageAtk1 && i === 0 && !forceAdvantageAll) {
-      advState = 'advantage';
-    }
+    const hcmNormal = computeHitProbs(baseDist, needed, critRange);
+    const hcmAdv = computeHitProbs(advDistObj, needed, critRange);
 
     // Blend hit probabilities based on Vex advantage probability
     let hcm: HitCritMiss;
@@ -293,7 +261,7 @@ function computeRiderEV(
 export interface DPRScenario {
   label: string;
   color: string;
-  dprs: number[]; // one per AC value
+  data: number[]; // one per AC value
 }
 
 export interface DPRCurveResult {
@@ -307,6 +275,10 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
 
   const hasSS = config.feats.sharpshooter || config.feats.gwm;
 
+  // Derive forced-advantage flags from config so sidebar toggles affect DPR tab
+  const forceAdv1 = config.advantageSources.surprise || config.advantageSources.luckyOnAtk1;
+  const forceAdvAll = config.advantageSources.flanking;
+
   const scenarios: DPRScenario[] = [];
 
   // All SS (if feat enabled)
@@ -314,7 +286,11 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
     scenarios.push({
       label: 'All Sharpshooter',
       color: '#f59e0b',
-      dprs: acs.map(ac => calcExpectedDPR(config, ac, { overrideSS: true })),
+      data: acs.map(ac => calcExpectedDPR(config, ac, {
+        overrideSS: true,
+        forceAdvantageAtk1: forceAdv1,
+        forceAdvantageAll: forceAdvAll,
+      })),
     });
   }
 
@@ -323,7 +299,11 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
     scenarios.push({
       label: 'Skip SS Atk 1',
       color: '#10b981',
-      dprs: acs.map(ac => calcExpectedDPR(config, ac, { skipSSAtk1: true })),
+      data: acs.map(ac => calcExpectedDPR(config, ac, {
+        skipSSAtk1: true,
+        forceAdvantageAtk1: forceAdv1,
+        forceAdvantageAll: forceAdvAll,
+      })),
     });
   }
 
@@ -331,7 +311,11 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
   scenarios.push({
     label: 'No Sharpshooter',
     color: '#6366f1',
-    dprs: acs.map(ac => calcExpectedDPR(config, ac, { overrideSS: false })),
+    data: acs.map(ac => calcExpectedDPR(config, ac, {
+      overrideSS: false,
+      forceAdvantageAtk1: forceAdv1,
+      forceAdvantageAll: forceAdvAll,
+    })),
   });
 
   // With Lucky (advantage on Atk1) + All SS
@@ -339,9 +323,10 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
     scenarios.push({
       label: 'Lucky + All SS',
       color: '#ec4899',
-      dprs: acs.map(ac => calcExpectedDPR(config, ac, {
+      data: acs.map(ac => calcExpectedDPR(config, ac, {
         overrideSS: true,
         forceAdvantageAtk1: true,
+        forceAdvantageAll: forceAdvAll,
       })),
     });
   }
@@ -352,9 +337,11 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
     scenarios.push({
       label: hasSS ? 'All SS + Hex' : 'With Hex',
       color: '#8b5cf6',
-      dprs: acs.map(ac => calcExpectedDPR(config, ac, {
+      data: acs.map(ac => calcExpectedDPR(config, ac, {
         overrideSS: hasSS ? true : null,
         hexActive: true,
+        forceAdvantageAtk1: forceAdv1,
+        forceAdvantageAll: forceAdvAll,
       })),
     });
   }
@@ -370,8 +357,8 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
 
     if (allSSScenario && skipScenario) {
       for (let i = 0; i < acs.length - 1; i++) {
-        if (allSSScenario.dprs[i] >= skipScenario.dprs[i] &&
-            allSSScenario.dprs[i + 1] < skipScenario.dprs[i + 1]) {
+        if (allSSScenario.data[i] >= skipScenario.data[i] &&
+            allSSScenario.data[i + 1] < skipScenario.data[i + 1]) {
           allSSvsSkip = acs[i + 1];
           break;
         }
@@ -380,8 +367,8 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
 
     if (skipScenario && noSSScenario) {
       for (let i = 0; i < acs.length - 1; i++) {
-        if (skipScenario.dprs[i] >= noSSScenario.dprs[i] &&
-            skipScenario.dprs[i + 1] < noSSScenario.dprs[i + 1]) {
+        if (skipScenario.data[i] >= noSSScenario.data[i] &&
+            skipScenario.data[i + 1] < noSSScenario.data[i + 1]) {
           skipSSvsNoSS = acs[i + 1];
           break;
         }

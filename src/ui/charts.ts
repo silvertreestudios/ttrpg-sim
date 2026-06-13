@@ -35,8 +35,7 @@ function destroyChart(id: string): void {
 
 export interface LineDataset {
   label: string;
-  data?: number[];
-  dprs?: number[];
+  data: number[];
   color: string;
   dashed?: boolean;
 }
@@ -60,11 +59,11 @@ export function renderLineChart(
       labels: labels.map(String),
       datasets: datasets.map(ds => ({
         label: ds.label,
-        data: ds.data ?? (ds as any).dprs ?? [],
+        data: ds.data,
         borderColor: ds.color,
         backgroundColor: ds.color + '22',
         borderWidth: 2,
-        borderDash: ds.dashed ? [5, 5] : undefined,
+        borderDash: ds.dashed ? [5, 5] : [],
         pointRadius: 3,
         pointHoverRadius: 5,
         tension: 0.3,
@@ -138,7 +137,7 @@ export function renderBarChart(
       labels,
       datasets: datasets.map(ds => ({
         label: ds.label,
-        data: ds.data ?? (ds as any).dprs ?? [],
+        data: ds.data,
         backgroundColor: ds.color + 'bb',
         borderColor: ds.color,
         borderWidth: 1,
@@ -204,7 +203,7 @@ export function renderGroupedBar(
       labels,
       datasets: datasets.map(ds => ({
         label: ds.label,
-        data: ds.data ?? (ds as any).dprs ?? [],
+        data: ds.data,
         backgroundColor: ds.color + 'bb',
         borderColor: ds.color,
         borderWidth: 1,
