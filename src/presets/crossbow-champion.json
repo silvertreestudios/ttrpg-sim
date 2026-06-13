@@ -50,7 +50,7 @@
       "condition": "firstHitPactWeapon",
       "placement": "preferSecondAttack",
       "requiresBonusAction": false,
-      "perTurnLimit": 0,
+      "perTurnLimit": 1,
       "enabled": true
     },
     {
