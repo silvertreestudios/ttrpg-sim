@@ -34,7 +34,7 @@
   "feats": {
     "sharpshooter": true,
     "gwm": false,
-    "piercer": { "enabled": true, "die": "1d6", "doublesOnCrit": false },
+    "piercer": { "enabled": true, "die": "1d6", "doublesOnCrit": false, "puncture": true, "punctureDie": 6 },
     "lucky": { "enabled": true, "points": 3 },
     "halflingLucky": true,
     "crossbowExpert": true
@@ -43,16 +43,6 @@
     "vex": true
   },
   "riders": [
-    {
-      "name": "Thirsting Blade",
-      "damage": "1d6",
-      "doublesOnCrit": true,
-      "condition": "firstHitPactWeapon",
-      "placement": "preferSecondAttack",
-      "requiresBonusAction": false,
-      "perTurnLimit": 1,
-      "enabled": true
-    },
     {
       "name": "Eldritch Smite",
       "damage": "5d8",

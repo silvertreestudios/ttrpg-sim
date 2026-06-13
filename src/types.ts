@@ -18,8 +18,10 @@ export interface AttackConfig {
 
 export interface PiercerConfig {
   enabled: boolean;
-  die: string;           // e.g. "1d6"
+  die: string;           // e.g. "1d6" — extra die on crit
   doublesOnCrit: boolean; // always false for Piercer — extra die, not doubled
+  puncture: boolean;     // Puncture: once/turn, reroll one weapon damage die on 1
+  punctureDie: number;   // sides of the weapon die to reroll (e.g. 6 for d6)
 }
 
 export interface LuckyConfig {
