@@ -6,7 +6,7 @@ import './style.css';
 import type { CharacterConfig } from './types.js';
 import { initSidebar, updateSidebarConfig } from './ui/sidebar.js';
 import { initTabs, type TabId } from './ui/tabs.js';
-import { renderLineChart, renderBarChart, renderGroupedBar } from './ui/charts.js';
+import { renderLineChart, renderBarChart, renderGroupedBar, renderCDFChart } from './ui/charts.js';
 import { renderDPRTable, renderTable, fmtDec, fmtSigned } from './ui/tables.js';
 import { analyzeDPRCurve } from './analysis/dpr-curve.js';
 import { buildHistogramBins } from './analysis/burst.js';
@@ -28,6 +28,15 @@ let config: CharacterConfig = loadConfig();
 
 let mcWorker: Worker | null = null;
 let mookWorker: Worker | null = null;
+
+// ============================================================
+// Cached MC results (for CDF toggle re-render without re-sim)
+// ============================================================
+
+/** Last single-run MC result — used to re-render when toggling PDF/CDF */
+let lastMCResult: MonteCarloResult | null = null;
+/** Sim count that produced lastMCResult */
+let lastMCSimCount = 100000;
 
 function createWorker(): Worker {
   return new Worker(new URL('./engine/worker.ts', import.meta.url), { type: 'module' });
@@ -195,29 +204,124 @@ function renderSurpriseTab(): void {
   );
 }
 
-function renderMCResult(result: MonteCarloResult): void {
-  const simCount = (document.getElementById('sim-count') as HTMLSelectElement)?.value ?? '100000';
-  const n = parseInt(simCount);
+// ============================================================
+// CDF / PDF rendering helpers
+// ============================================================
 
-  // Histogram
+/**
+ * Given an array of per-bin probabilities (PDF), compute the survival function
+ * (complementary CDF): P(damage >= X) for each bin.
+ *
+ * We treat each bin as representing one group of damage values, so "P(damage >= bin[i])"
+ * is the sum of all probabilities at bin[i] and beyond.
+ */
+function buildCDFValues(pdfValues: number[]): number[] {
+  const cdf: number[] = new Array(pdfValues.length).fill(0);
+  let cumFromRight = 0;
+  for (let i = pdfValues.length - 1; i >= 0; i--) {
+    cumFromRight += pdfValues[i];
+    cdf[i] = Math.min(cumFromRight, 1);  // clamp floating-point noise
+  }
+  return cdf;
+}
+
+/**
+ * (Re-)render the main burst chart in PDF or CDF mode from a cached MC result.
+ * Also shows/hides the CDF toggle label.
+ */
+function renderBurstChart(result: MonteCarloResult, simCount: number): void {
+  const isCDF = (document.getElementById('burst-cumulative') as HTMLInputElement)?.checked ?? false;
+
   const bins = buildHistogramBins(
     result.histogram as unknown as { damage: number; count: number }[],
-    n,
+    simCount,
     result.percentiles.p50,
     result.percentiles.p90,
   );
 
-  renderBarChart(
-    'chart-burst',
-    bins.map(b => b.label),
-    [{
-      label: 'Probability',
-      data: bins.map(b => b.count),
-      color: '#6366f1',
-    }],
-    'Probability',
-    'Damage (grouped)',
+  const labels = bins.map(b => b.label);
+  const pdfValues = bins.map(b => b.count);
+
+  if (isCDF) {
+    const cdfValues = buildCDFValues(pdfValues);
+    renderCDFChart(
+      'chart-burst',
+      labels,
+      [{ label: 'P(damage ≥ X)', data: cdfValues, color: '#6366f1' }],
+      'P(damage ≥ X)',
+      'Damage (grouped)',
+    );
+  } else {
+    renderBarChart(
+      'chart-burst',
+      labels,
+      [{ label: 'Probability', data: pdfValues, color: '#6366f1' }],
+      'Probability',
+      'Damage (grouped)',
+    );
+  }
+}
+
+/**
+ * (Re-)render the comparison burst chart (Normal vs Action Surge) in PDF or CDF mode.
+ */
+function renderCompareBurstChart(normal: MonteCarloResult, surge: MonteCarloResult, simCount: number): void {
+  const isCDF = (document.getElementById('burst-cumulative') as HTMLInputElement)?.checked ?? false;
+
+  const normalBins = buildHistogramBins(
+    normal.histogram as unknown as { damage: number; count: number }[],
+    simCount, normal.percentiles.p50, normal.percentiles.p90,
   );
+  const surgeBins = buildHistogramBins(
+    surge.histogram as unknown as { damage: number; count: number }[],
+    simCount, surge.percentiles.p50, surge.percentiles.p90,
+  );
+
+  const maxLen = Math.max(normalBins.length, surgeBins.length);
+  const labels = Array.from({ length: maxLen }, (_, i) =>
+    normalBins[i]?.label ?? surgeBins[i]?.label ?? `${i * 5}-${i * 5 + 4}`);
+  const normalData = Array.from({ length: maxLen }, (_, i) => normalBins[i]?.count ?? 0);
+  const surgeData = Array.from({ length: maxLen }, (_, i) => surgeBins[i]?.count ?? 0);
+
+  if (isCDF) {
+    renderCDFChart(
+      'chart-burst-compare',
+      labels,
+      [
+        { label: 'Normal Round', data: buildCDFValues(normalData), color: '#6366f1' },
+        { label: 'Action Surge', data: buildCDFValues(surgeData), color: '#ef4444' },
+      ],
+      'P(damage ≥ X)',
+      'Damage',
+    );
+  } else {
+    renderGroupedBar(
+      'chart-burst-compare',
+      labels,
+      [
+        { label: 'Normal Round', data: normalData, color: '#6366f1' },
+        { label: 'Action Surge Round', data: surgeData, color: '#ef4444' },
+      ],
+      'Probability',
+      'Damage',
+    );
+  }
+}
+
+function renderMCResult(result: MonteCarloResult): void {
+  const simCount = (document.getElementById('sim-count') as HTMLSelectElement)?.value ?? '100000';
+  const n = parseInt(simCount);
+
+  // Cache for toggle re-render
+  lastMCResult = result;
+  lastMCSimCount = n;
+
+  // Show the CDF toggle now that we have data
+  const toggleLabel = document.getElementById('burst-cdf-toggle-label');
+  if (toggleLabel) toggleLabel.style.display = '';
+
+  // Histogram (PDF or CDF depending on toggle)
+  renderBurstChart(result, n);
 
   // Percentile table
   const pct = result.percentiles;
@@ -368,32 +472,8 @@ function runCompare(): void {
 }
 
 function renderCompareResult(normal: MonteCarloResult, surge: MonteCarloResult, simCount: number): void {
-  // Overlay histogram comparison
-  const normalBins = buildHistogramBins(
-    normal.histogram as unknown as { damage: number; count: number }[],
-    simCount, normal.percentiles.p50, normal.percentiles.p90,
-  );
-  const surgeBins = buildHistogramBins(
-    surge.histogram as unknown as { damage: number; count: number }[],
-    simCount, surge.percentiles.p50, surge.percentiles.p90,
-  );
-
-  // Align bins: pad to same length
-  const maxLen = Math.max(normalBins.length, surgeBins.length);
-  const labels = Array.from({ length: maxLen }, (_, i) => normalBins[i]?.label ?? surgeBins[i]?.label ?? `${i * 5}-${i * 5 + 4}`);
-  const normalData = Array.from({ length: maxLen }, (_, i) => normalBins[i]?.count ?? 0);
-  const surgeData = Array.from({ length: maxLen }, (_, i) => surgeBins[i]?.count ?? 0);
-
-  renderGroupedBar(
-    'chart-burst-compare',
-    labels,
-    [
-      { label: 'Normal Round', data: normalData, color: '#6366f1' },
-      { label: 'Action Surge Round', data: surgeData, color: '#ef4444' },
-    ],
-    'Probability',
-    'Damage',
-  );
+  // Overlay histogram comparison (PDF or CDF)
+  renderCompareBurstChart(normal, surge, simCount);
 
   // Comparison summary table
   const nP = normal.percentiles;
@@ -761,6 +841,17 @@ function init(): void {
   // Run simulation buttons
   document.getElementById('btn-run-mc')?.addEventListener('click', runMonteCarlo);
   document.getElementById('btn-run-mook')?.addEventListener('click', runMookSim);
+  document.getElementById('btn-run-mc-compare')?.addEventListener('click', runCompare);
+
+  // CDF toggle — re-render from cached results without re-simulating
+  document.getElementById('burst-cumulative')?.addEventListener('change', () => {
+    if (lastMCResult) {
+      renderBurstChart(lastMCResult, lastMCSimCount);
+    }
+    if (compareNormalResult && compareSurgeResult) {
+      renderCompareBurstChart(compareNormalResult, compareSurgeResult, lastMCSimCount);
+    }
+  });
 
   // Hex AC input
   document.getElementById('hex-ac')?.addEventListener('change', () => {
