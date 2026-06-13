@@ -7,8 +7,8 @@ import type { CharacterConfig } from './types.js';
 import { initSidebar, updateSidebarConfig } from './ui/sidebar.js';
 import { initTabs, type TabId } from './ui/tabs.js';
 import { renderLineChart, renderBarChart, renderGroupedBar } from './ui/charts.js';
-import { renderDPRTable, renderTable, fmtDec, fmtPct, fmtSigned } from './ui/tables.js';
-import { analyzeDPRCurve, buildDPRTable } from './analysis/dpr-curve.js';
+import { renderDPRTable, renderTable, fmtDec, fmtSigned } from './ui/tables.js';
+import { analyzeDPRCurve } from './analysis/dpr-curve.js';
 import { buildHistogramBins } from './analysis/burst.js';
 import { analyzeHex } from './analysis/hex.js';
 import { analyzeSurprise } from './analysis/surprise.js';
@@ -450,6 +450,13 @@ function runMonteCarlo(): void {
     }
   };
 
+  mcWorker.onerror = (e: ErrorEvent) => {
+    if (progressContainer) progressContainer.style.display = 'none';
+    if (runBtn) runBtn.disabled = false;
+    if (statusEl) statusEl.textContent = `Error: ${e.message}`;
+    mcWorker = null;
+  };
+
   const req: WorkerRequest = {
     type: 'montecarlo',
     config,
@@ -494,6 +501,13 @@ function runMookSim(): void {
 
       mookWorker = null;
     }
+  };
+
+  mookWorker.onerror = (e: ErrorEvent) => {
+    if (progressContainer) progressContainer.style.display = 'none';
+    if (runBtn) runBtn.disabled = false;
+    if (statusEl) statusEl.textContent = `Error: ${e.message}`;
+    mookWorker = null;
   };
 
   const req: WorkerRequest = {

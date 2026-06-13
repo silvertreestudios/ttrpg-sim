@@ -4,8 +4,7 @@
 // Handles Monte Carlo and Mook simulations off the main thread.
 
 import type { WorkerRequest, WorkerProgress, WorkerResult } from '../types.js';
-import { runMonteCarlo } from './montecarlo.js';
-import { runMookSim } from './montecarlo.js';
+import { runMonteCarlo, runMookSim } from './montecarlo.js';
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;

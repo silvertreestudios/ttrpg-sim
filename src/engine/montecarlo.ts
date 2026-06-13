@@ -311,7 +311,6 @@ export function runMookSim(
     let kills = 0;
     let currentMookHP = mookHP;
     let hasAdvantage = hasSurprise;
-    let firstHitDone = false;
 
     for (let i = 0; i < attacks.length; i++) {
       const atk = attacks[i];
@@ -357,11 +356,8 @@ export function runMookSim(
         kills++;
         totalKills++;
         currentMookHP = mookHP; // switch to next mook
-        firstHitDone = false;
         if (!vexEnabled) hasAdvantage = false; // new target, no Vex
       }
-
-      firstHitDone = true;
     }
 
     killCounts[sim] = kills;

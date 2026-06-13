@@ -82,7 +82,7 @@ export function fmtSigned(places: number = 1): (val: string | number) => string 
 export function renderDPRTable(
   containerId: string,
   acs: number[],
-  scenarios: { label: string; dprs: number[] }[],
+  scenarios: { label: string; data: number[] }[],
   breakpoints: { allSSvsSkip: number; skipSSvsNoSS: number },
 ): void {
   const container = document.getElementById(containerId);
@@ -97,7 +97,7 @@ export function renderDPRTable(
   `;
 
   const tbody = acs.map((ac, idx) => {
-    const dprs = scenarios.map(s => s.dprs[idx]);
+    const dprs = scenarios.map(s => s.data[idx]);
     const maxDPR = Math.max(...dprs);
     const bestIdx = dprs.indexOf(maxDPR);
     const bestLabel = scenarios[bestIdx]?.label ?? '';

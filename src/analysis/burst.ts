@@ -2,16 +2,6 @@
 // Burst Distribution Analysis (wraps Monte Carlo results)
 // ============================================================
 
-import type { CharacterConfig, MonteCarloResult, BurstPercentiles } from '../types.js';
-
-/** Build percentile summary from MC result */
-export function buildPercentileTable(
-  _config: CharacterConfig,
-  result: MonteCarloResult,
-): BurstPercentiles {
-  return result.percentiles;
-}
-
 /** Build histogram bins for chart (group into damage buckets of width 5) */
 export interface HistogramBin {
   label: string;
