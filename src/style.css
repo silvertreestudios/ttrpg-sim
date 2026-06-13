@@ -1,0 +1,662 @@
+/* ============================================================
+   D&D 5.5e DPR Calculator — Dark Theme
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-900: #0f172a;
+  --bg-800: #1e293b;
+  --bg-700: #334155;
+  --bg-600: #475569;
+  --text-100: #f1f5f9;
+  --text-200: #e2e8f0;
+  --text-400: #94a3b8;
+  --text-600: #64748b;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-glow: rgba(99, 102, 241, 0.2);
+  --gold: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --sidebar-width: 320px;
+  --topbar-height: 52px;
+  --border: 1px solid var(--bg-700);
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-900);
+  color: var(--text-200);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ============================================================
+   Top Bar
+   ============================================================ */
+
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--topbar-height);
+  padding: 0 16px;
+  background: var(--bg-800);
+  border-bottom: var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+  box-shadow: var(--shadow);
+}
+
+#topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.logo-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+}
+
+.app-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-100);
+  white-space: nowrap;
+}
+
+.build-name {
+  color: var(--accent-light);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  padding: 2px 8px;
+  background: var(--accent-glow);
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+}
+
+#topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+button, .btn-primary, .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  border: var(--border);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-light);
+  border-color: var(--accent-light);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary, button:not(.btn-primary):not(.btn-icon):not(.tab-btn) {
+  background: var(--bg-700);
+  color: var(--text-200);
+  border-color: var(--bg-600);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-600);
+  color: var(--text-100);
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-600);
+  padding: 2px 6px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+
+.btn-icon:hover {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================================
+   Main Layout
+   ============================================================ */
+
+#main-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+
+#sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--bg-800);
+  border-right: var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+  background: var(--bg-800);
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+  background: var(--bg-600);
+  border-radius: 3px;
+}
+
+#sidebar-content {
+  padding: 8px 0;
+}
+
+/* Sidebar sections */
+.sidebar-section {
+  border-bottom: var(--border);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-400);
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.section-header:hover {
+  color: var(--text-100);
+}
+
+.toggle-icon {
+  font-size: 12px;
+  transition: transform 0.15s;
+}
+
+.section-body {
+  padding: 4px 14px 12px;
+}
+
+/* Fields */
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  min-height: 28px;
+}
+
+.field-row.inline {
+  display: inline-flex;
+  margin-right: 12px;
+}
+
+.field-row label {
+  color: var(--text-400);
+  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.input-text, .input-number, .input-select {
+  background: var(--bg-900);
+  color: var(--text-200);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: var(--font);
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.input-text {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.input-number {
+  width: 60px;
+  text-align: right;
+}
+
+.input-select {
+  min-width: 80px;
+}
+
+.input-text:focus, .input-number:focus, .input-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Attack / Rider cards */
+.attack-card, .rider-card {
+  background: var(--bg-900);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.attack-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.attack-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-light);
+}
+
+/* ============================================================
+   Analysis Area
+   ============================================================ */
+
+#analysis-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Tab Bar */
+#tab-bar {
+  display: flex;
+  background: var(--bg-800);
+  border-bottom: var(--border);
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 0 16px;
+  padding-top: 6px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-400);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: var(--radius) var(--radius) 0 0;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--text-200);
+  background: var(--bg-700);
+}
+
+.tab-btn.active {
+  color: var(--accent-light);
+  border-bottom-color: var(--accent);
+  background: transparent;
+}
+
+/* Tab contents */
+#tab-contents {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+}
+
+#tab-contents::-webkit-scrollbar {
+  width: 6px;
+}
+
+#tab-contents::-webkit-scrollbar-track {
+  background: var(--bg-900);
+}
+
+#tab-contents::-webkit-scrollbar-thumb {
+  background: var(--bg-600);
+  border-radius: 3px;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.tab-content h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-100);
+  margin-bottom: 16px;
+}
+
+.tab-content h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-200);
+  margin: 16px 0 8px;
+}
+
+/* ============================================================
+   Charts
+   ============================================================ */
+
+.chart-container {
+  position: relative;
+  height: 320px;
+  background: var(--bg-800);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   Tables
+   ============================================================ */
+
+.table-wrapper {
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table caption {
+  text-align: left;
+  color: var(--text-400);
+  font-size: 12px;
+  padding: 4px 0 8px;
+  font-style: italic;
+}
+
+.data-table th {
+  background: var(--bg-800);
+  color: var(--text-400);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--bg-600);
+}
+
+.data-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--bg-800);
+  color: var(--text-200);
+}
+
+.data-table tr:hover td {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.cell-highlight {
+  color: var(--gold) !important;
+  font-weight: 600;
+}
+
+.cell-best {
+  color: var(--green);
+  font-size: 12px;
+}
+
+.row-breakpoint td {
+  border-top: 2px solid var(--accent);
+}
+
+.breakpoint-note {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--text-400);
+}
+
+.breakpoint-note span {
+  padding: 3px 8px;
+  background: var(--bg-800);
+  border-radius: 4px;
+  border: var(--border);
+}
+
+/* ============================================================
+   Burst / Stat Cards
+   ============================================================ */
+
+.burst-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-800);
+  border-radius: var(--radius-lg);
+  border: var(--border);
+}
+
+.mook-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-800);
+  border-radius: var(--radius-lg);
+  border: var(--border);
+}
+
+.progress-bar {
+  width: 200px;
+  height: 6px;
+  background: var(--bg-700);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.1s ease;
+  width: 0%;
+}
+
+#mc-status, #mook-status {
+  font-size: 12px;
+  color: var(--text-400);
+}
+
+.burst-stats {
+  margin-top: 16px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: var(--bg-800);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-light);
+  line-height: 1.2;
+}
+
+.stat-note {
+  font-size: 11px;
+  color: var(--text-600);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   Hex tab
+   ============================================================ */
+
+.muted {
+  color: var(--text-400);
+  font-style: italic;
+  font-size: 13px;
+  padding: 12px;
+}
+
+/* ============================================================
+   Scrollbar for select elements
+   ============================================================ */
+
+select {
+  background: var(--bg-900);
+  color: var(--text-200);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  outline: none;
+}
+
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* ============================================================
+   Responsive: tablet
+   ============================================================ */
+
+@media (max-width: 900px) {
+  :root {
+    --sidebar-width: 280px;
+  }
+}
+
+@media (max-width: 700px) {
+  #main-layout {
+    flex-direction: column;
+  }
+
+  #sidebar {
+    width: 100%;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: var(--border);
+  }
+
+  .build-name {
+    display: none;
+  }
+}

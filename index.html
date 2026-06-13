@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>D&D 5.5e DPR Calculator</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Top Bar -->
+      <header id="topbar">
+        <div id="topbar-left">
+          <span class="logo-icon">⚔️</span>
+          <span class="app-title">DPR Calculator</span>
+          <span id="build-name-display" class="build-name">Loading...</span>
+        </div>
+        <div id="topbar-right">
+          <select id="preset-select" class="btn-secondary">
+            <option value="crossbow">Crossbow Champion/Warlock</option>
+            <option value="custom">Custom Build</option>
+          </select>
+          <button id="btn-import" class="btn-secondary">📥 Import</button>
+          <button id="btn-export" class="btn-secondary">📤 Export</button>
+          <input type="file" id="file-import" accept=".json" style="display:none" />
+        </div>
+      </header>
+
+      <!-- Main Layout -->
+      <div id="main-layout">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+          <div id="sidebar-content">
+            <!-- Character Section -->
+            <div class="sidebar-section">
+              <div class="section-header" data-toggle="char-body">
+                <span>Character</span><span class="toggle-icon">▾</span>
+              </div>
+              <div class="section-body" id="char-body">
+                <div class="field-row">
+                  <label>Build Name</label>
+                  <input type="text" id="cfg-name" class="input-text" />
+                </div>
+                <div class="field-row">
+                  <label>Level</label>
+                  <input type="number" id="cfg-level" min="1" max="20" class="input-number" />
+                </div>
+                <div class="field-row">
+                  <label>Proficiency Bonus</label>
+                  <input type="number" id="cfg-prof" min="2" max="6" class="input-number" />
+                </div>
+                <div class="field-row">
+                  <label>Ability Modifier</label>
+                  <input type="number" id="cfg-abilmod" min="-5" max="10" class="input-number" />
+                </div>
+                <div class="field-row">
+                  <label>Fighting Style Bonus</label>
+                  <input type="number" id="cfg-fstyle" min="0" max="3" class="input-number" />
+                </div>
+                <div class="field-row">
+                  <label>Crit Range</label>
+                  <select id="cfg-critrange" class="input-select">
+                    <option value="20">20 only (normal)</option>
+                    <option value="19">19–20 (Champion lvl 3)</option>
+                    <option value="18">18–20 (Champion lvl 15)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Attacks Section -->
+            <div class="sidebar-section">
+              <div class="section-header" data-toggle="attacks-body">
+                <span>Attacks</span><span class="toggle-icon">▾</span>
+              </div>
+              <div class="section-body" id="attacks-body">
+                <div id="attacks-list"></div>
+                <button id="btn-add-attack" class="btn-secondary btn-small">+ Add Attack</button>
+              </div>
+            </div>
+
+            <!-- Feats Section -->
+            <div class="sidebar-section">
+              <div class="section-header" data-toggle="feats-body">
+                <span>Feats &amp; Features</span><span class="toggle-icon">▾</span>
+              </div>
+              <div class="section-body" id="feats-body">
+                <div class="field-row">
+                  <label>Sharpshooter / GWM</label>
+                  <input type="checkbox" id="cfg-sharpshooter" />
+                </div>
+                <div class="field-row">
+                  <label>Halfling Lucky (reroll 1s)</label>
+                  <input type="checkbox" id="cfg-halflinglucky" />
+                </div>
+                <div class="field-row">
+                  <label>Lucky Feat</label>
+                  <input type="checkbox" id="cfg-lucky" />
+                </div>
+                <div class="field-row cfg-lucky-sub" style="display:none">
+                  <label>Lucky Points</label>
+                  <input type="number" id="cfg-luckypoints" min="1" max="5" class="input-number" />
+                </div>
+                <div class="field-row">
+                  <label>Piercer (extra die on crit)</label>
+                  <input type="checkbox" id="cfg-piercer" />
+                </div>
+                <div class="field-row cfg-piercer-sub" style="display:none">
+                  <label>Piercer Die</label>
+                  <select id="cfg-piercerdie" class="input-select">
+                    <option value="1d4">1d4</option>
+                    <option value="1d6">1d6</option>
+                    <option value="1d8">1d8</option>
+                    <option value="1d10">1d10</option>
+                    <option value="1d12">1d12</option>
+                  </select>
+                </div>
+                <div class="field-row">
+                  <label>Crossbow Expert</label>
+                  <input type="checkbox" id="cfg-xbowexpert" />
+                </div>
+                <div class="field-row">
+                  <label>Weapon Mastery: Vex</label>
+                  <input type="checkbox" id="cfg-vex" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Riders Section -->
+            <div class="sidebar-section">
+              <div class="section-header" data-toggle="riders-body">
+                <span>Damage Riders</span><span class="toggle-icon">▾</span>
+              </div>
+              <div class="section-body" id="riders-body">
+                <div id="riders-list"></div>
+                <button id="btn-add-rider" class="btn-secondary btn-small">+ Add Rider</button>
+              </div>
+            </div>
+
+            <!-- Advantage Sources -->
+            <div class="sidebar-section">
+              <div class="section-header" data-toggle="adv-body">
+                <span>Advantage Sources</span><span class="toggle-icon">▾</span>
+              </div>
+              <div class="section-body" id="adv-body">
+                <div class="field-row">
+                  <label>Surprise (Atk 1 adv)</label>
+                  <input type="checkbox" id="cfg-surprise" />
+                </div>
+                <div class="field-row">
+                  <label>Flanking / Other</label>
+                  <input type="checkbox" id="cfg-flanking" />
+                </div>
+                <div class="field-row">
+                  <label>Lucky on Atk 1</label>
+                  <input type="checkbox" id="cfg-luckyatk1" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Analysis Area -->
+        <main id="analysis-area">
+          <div id="tab-bar">
+            <button class="tab-btn active" data-tab="dpr-curve">DPR Curve</button>
+            <button class="tab-btn" data-tab="burst">Burst Analysis</button>
+            <button class="tab-btn" data-tab="hex">Hex Break-Even</button>
+            <button class="tab-btn" data-tab="mook">Mook Clearing</button>
+            <button class="tab-btn" data-tab="surprise">Surprise Round</button>
+          </div>
+
+          <div id="tab-contents">
+            <!-- DPR Curve Tab -->
+            <div id="tab-dpr-curve" class="tab-content active">
+              <h2>DPR vs AC Curve</h2>
+              <div class="chart-container">
+                <canvas id="chart-dpr"></canvas>
+              </div>
+              <div id="table-dpr" class="table-wrapper"></div>
+            </div>
+
+            <!-- Burst Tab -->
+            <div id="tab-burst" class="tab-content">
+              <h2>Burst / Damage Distribution</h2>
+              <div class="burst-controls">
+                <div class="field-row inline">
+                  <label>Simulations</label>
+                  <select id="sim-count" class="input-select">
+                    <option value="10000">10,000 (fast)</option>
+                    <option value="50000">50,000</option>
+                    <option value="100000" selected>100,000</option>
+                    <option value="200000">200,000 (slow)</option>
+                  </select>
+                </div>
+                <div class="field-row inline">
+                  <label>Target AC</label>
+                  <input type="number" id="burst-ac" value="16" min="10" max="30" class="input-number" />
+                </div>
+                <button id="btn-run-mc" class="btn-primary">▶ Run Simulation</button>
+                <div id="mc-progress" style="display:none">
+                  <div class="progress-bar"><div id="mc-progress-fill" class="progress-fill"></div></div>
+                  <span id="mc-status">Simulating...</span>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-burst"></canvas>
+              </div>
+              <div id="table-burst" class="table-wrapper"></div>
+            </div>
+
+            <!-- Hex Tab -->
+            <div id="tab-hex" class="tab-content">
+              <h2>Hex / Concentration Spell Break-Even</h2>
+              <div class="field-row inline">
+                <label>Target AC</label>
+                <input type="number" id="hex-ac" value="16" min="10" max="30" class="input-number" />
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-hex"></canvas>
+              </div>
+              <div id="table-hex" class="table-wrapper"></div>
+            </div>
+
+            <!-- Mook Tab -->
+            <div id="tab-mook" class="tab-content">
+              <h2>Mook Clearing Analysis</h2>
+              <div class="mook-controls">
+                <div class="field-row inline">
+                  <label>Mook AC</label>
+                  <input type="number" id="mook-ac" value="14" min="5" max="25" class="input-number" />
+                </div>
+                <div class="field-row inline">
+                  <label>Mook HP</label>
+                  <input type="number" id="mook-hp" value="35" min="1" max="200" class="input-number" />
+                </div>
+                <div class="field-row inline">
+                  <label>Simulations</label>
+                  <select id="mook-sim-count" class="input-select">
+                    <option value="10000">10,000</option>
+                    <option value="50000" selected>50,000</option>
+                    <option value="100000">100,000</option>
+                  </select>
+                </div>
+                <button id="btn-run-mook" class="btn-primary">▶ Run Mook Sim</button>
+              </div>
+              <div id="mook-progress" style="display:none">
+                <div class="progress-bar"><div id="mook-progress-fill" class="progress-fill"></div></div>
+                <span id="mook-status">Simulating...</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="chart-mook"></canvas>
+              </div>
+              <div id="table-mook" class="table-wrapper"></div>
+            </div>
+
+            <!-- Surprise Tab -->
+            <div id="tab-surprise" class="tab-content">
+              <h2>Surprise Round Analysis</h2>
+              <div class="chart-container">
+                <canvas id="chart-surprise"></canvas>
+              </div>
+              <div id="table-surprise" class="table-wrapper"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

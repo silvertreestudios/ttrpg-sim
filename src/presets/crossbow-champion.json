@@ -1,0 +1,82 @@
+{
+  "name": "Crossbow Champion/Warlock (Level 12)",
+  "level": 12,
+  "proficiencyBonus": 4,
+  "abilityMod": 5,
+  "fightingStyle": { "type": "archery", "bonus": 2 },
+  "critRange": 19,
+  "attacks": [
+    {
+      "name": "Main Hand 1",
+      "weapon": { "damageDice": "1d6", "magicBonus": 2 },
+      "isPactWeapon": true,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 1
+    },
+    {
+      "name": "Main Hand 2",
+      "weapon": { "damageDice": "1d6", "magicBonus": 2 },
+      "isPactWeapon": true,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 2
+    },
+    {
+      "name": "Off-Hand (CBE)",
+      "weapon": { "damageDice": "1d6", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 3
+    }
+  ],
+  "feats": {
+    "sharpshooter": true,
+    "gwm": false,
+    "piercer": { "enabled": true, "die": "1d6", "doublesOnCrit": false },
+    "lucky": { "enabled": true, "points": 3 },
+    "halflingLucky": true,
+    "crossbowExpert": true
+  },
+  "weaponMastery": {
+    "vex": true
+  },
+  "riders": [
+    {
+      "name": "Thirsting Blade",
+      "damage": "1d6",
+      "doublesOnCrit": true,
+      "condition": "firstHitPactWeapon",
+      "placement": "preferSecondAttack",
+      "requiresBonusAction": false,
+      "perTurnLimit": 0,
+      "enabled": true
+    },
+    {
+      "name": "Eldritch Smite",
+      "damage": "5d8",
+      "doublesOnCrit": true,
+      "condition": "onCritPactWeaponOnly",
+      "placement": "firstAvailable",
+      "requiresBonusAction": false,
+      "perTurnLimit": 1,
+      "enabled": true
+    },
+    {
+      "name": "Hex",
+      "damage": "1d6",
+      "doublesOnCrit": true,
+      "condition": "onHitWhileActive",
+      "placement": "firstAvailable",
+      "requiresBonusAction": true,
+      "perTurnLimit": 0,
+      "enabled": false
+    }
+  ],
+  "advantageSources": {
+    "surprise": false,
+    "luckyOnAtk1": false,
+    "flanking": false
+  }
+}
