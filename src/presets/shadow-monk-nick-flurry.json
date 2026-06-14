@@ -1,0 +1,94 @@
+{
+  "name": "Shadow Monk — Nick Scimitars + Flurry (Level 12)",
+  "level": 12,
+  "proficiencyBonus": 4,
+  "abilityMod": 5,
+  "fightingStyle": { "type": "none", "bonus": 0 },
+  "critRange": 20,
+  "attacks": [
+    {
+      "name": "Scimitar 1 (Attack)",
+      "weapon": { "damageDice": "1d6", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": false,
+      "order": 1
+    },
+    {
+      "name": "Scimitar 2 (Extra Attack)",
+      "weapon": { "damageDice": "1d6", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": false,
+      "order": 2
+    },
+    {
+      "name": "Nick Attack (free extra)",
+      "weapon": { "damageDice": "1d6", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": false,
+      "useSharpshooter": false,
+      "order": 3
+    },
+    {
+      "name": "Flurry: Unarmed 1",
+      "weapon": { "damageDice": "1d8", "magicBonus": 0 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": false,
+      "order": 4
+    },
+    {
+      "name": "Flurry: Unarmed 2",
+      "weapon": { "damageDice": "1d8", "magicBonus": 0 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": false,
+      "order": 5
+    }
+  ],
+  "feats": {
+    "sharpshooter": false,
+    "gwm": false,
+    "piercer": { "enabled": false, "die": "1d6", "doublesOnCrit": false, "puncture": false, "punctureDie": 6 },
+    "lucky": { "enabled": false, "points": 0 },
+    "halflingLucky": false,
+    "crossbowExpert": false
+  },
+  "weaponMastery": {
+    "vex": true
+  },
+  "riders": [
+    {
+      "name": "Stunning Strike (setup, no damage)",
+      "damage": "0",
+      "doublesOnCrit": false,
+      "condition": "onEveryHit",
+      "placement": "firstAvailable",
+      "requiresBonusAction": false,
+      "perTurnLimit": 0,
+      "enabled": false
+    }
+  ],
+  "advantageSources": {
+    "surprise": false,
+    "luckyOnAtk1": false,
+    "flanking": true
+  },
+  "actionSurge": {
+    "enabled": false,
+    "extraAttacks": [],
+    "usesPerRest": 0
+  },
+  "haste": {
+    "enabled": false,
+    "extraAttack": {
+      "name": "Haste Scimitar",
+      "weapon": { "damageDice": "1d6", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": false,
+      "order": 6
+    }
+  }
+}
