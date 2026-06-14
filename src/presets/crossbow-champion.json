@@ -90,5 +90,16 @@
       }
     ],
     "usesPerRest": 1
+  },
+  "haste": {
+    "enabled": false,
+    "extraAttack": {
+      "name": "Haste Attack",
+      "weapon": { "damageDice": "1d6", "magicBonus": 2 },
+      "isPactWeapon": true,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 3
+    }
   }
 }

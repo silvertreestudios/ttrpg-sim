@@ -30,6 +30,7 @@ export interface CalcOptions {
   hexActive?: boolean;          // Hex/concentration is active
   hexRiderIndex?: number;       // Which rider index is Hex
   useActionSurge?: boolean;     // Include Action Surge extra attacks
+  useHaste?: boolean;           // Include the single Haste extra attack
 }
 
 /** Full expected DPR for a character config vs a given AC */
@@ -45,6 +46,7 @@ export function calcExpectedDPR(
     forceAdvantageAll = false,
     hexActive = false,
     useActionSurge = false,
+    useHaste = false,
   } = opts;
 
   const hl = config.feats.halflingLucky;
@@ -54,24 +56,30 @@ export function calcExpectedDPR(
   const fightingBonus = config.fightingStyle.bonus;
 
   // Build the full ordered attack sequence.
-  // Action Surge order: Main1, Main2, Surge1, Surge2, OffHand
-  // We do this by splitting normal attacks into "main" (pact weapon) and "off-hand",
-  // inserting surge attacks after the main attacks, then appending off-hand last.
-  // Per the spec: off-hand is the bonus action attack, always last.
+  // Attack order for a Haste + Action Surge round:
+  //   Main1, Main2, Surge1, Surge2, Haste, OffHand
+  // Haste contributes exactly ONE extra weapon attack (main hand), inserted before off-hand.
   const normalAttacks = [...config.attacks].sort((a, b) => a.order - b.order);
 
   let allAttacks: AttackConfig[];
-  if (useActionSurge && config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) {
+  if ((useActionSurge && config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) ||
+      (useHaste && config.haste?.enabled)) {
     // Partition normal attacks into main-hand (pact) and off-hand
-    // Off-hand is the last non-pact attack by order convention
     const mainAttacks = normalAttacks.filter(a => a.isPactWeapon);
     const offHandAttacks = normalAttacks.filter(a => !a.isPactWeapon);
 
     // Surge attacks are extra main-hand attacks; insert them after normal main attacks
-    const surgeAttacks = config.actionSurge.extraAttacks;
+    const surgeAttacks = (useActionSurge && config.actionSurge?.enabled)
+      ? config.actionSurge.extraAttacks
+      : [];
 
-    // Final sequence: main attacks → surge attacks → off-hand attacks
-    allAttacks = [...mainAttacks, ...surgeAttacks, ...offHandAttacks];
+    // Haste adds exactly one more attack (main hand) after surge, before off-hand
+    const hasteAttacks = (useHaste && config.haste?.enabled)
+      ? [config.haste.extraAttack]
+      : [];
+
+    // Final sequence: main attacks → surge attacks → haste attack → off-hand attacks
+    allAttacks = [...mainAttacks, ...surgeAttacks, ...hasteAttacks, ...offHandAttacks];
   } else {
     allAttacks = normalAttacks;
   }
@@ -387,6 +395,47 @@ export function calcDPRCurve(config: CharacterConfig): DPRCurveResult {
         label: 'Action Surge',
         color: '#ef4444',
         data: acs.map(ac => calcExpectedDPR(config, ac, {
+          useActionSurge: true,
+          forceAdvantageAtk1: forceAdv1,
+          forceAdvantageAll: forceAdvAll,
+        })),
+      });
+    }
+  }
+
+  // Haste scenario (if enabled in config)
+  if (config.haste?.enabled) {
+    if (hasSS) {
+      scenarios.push({
+        label: 'Haste (All SS)',
+        color: '#f97316',
+        data: acs.map(ac => calcExpectedDPR(config, ac, {
+          overrideSS: true,
+          useHaste: true,
+          forceAdvantageAtk1: forceAdv1,
+          forceAdvantageAll: forceAdvAll,
+        })),
+      });
+    } else {
+      scenarios.push({
+        label: 'Haste',
+        color: '#f97316',
+        data: acs.map(ac => calcExpectedDPR(config, ac, {
+          useHaste: true,
+          forceAdvantageAtk1: forceAdv1,
+          forceAdvantageAll: forceAdvAll,
+        })),
+      });
+    }
+
+    // Haste + Action Surge combo (if both enabled)
+    if (config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) {
+      scenarios.push({
+        label: hasSS ? 'Haste + Action Surge (All SS)' : 'Haste + Action Surge',
+        color: '#dc2626',
+        data: acs.map(ac => calcExpectedDPR(config, ac, {
+          overrideSS: hasSS ? true : null,
+          useHaste: true,
           useActionSurge: true,
           forceAdvantageAtk1: forceAdv1,
           forceAdvantageAll: forceAdvAll,

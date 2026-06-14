@@ -59,6 +59,9 @@ function renderFromConfig(): void {
   // Action Surge section
   renderActionSurgeSection();
 
+  // Haste section
+  renderHasteSection();
+
   // Riders list
   renderRidersList();
 }
@@ -279,6 +282,102 @@ function renderActionSurgeSection(): void {
   });
 }
 
+function renderHasteSection(): void {
+  // Ensure config has haste field (backwards compat)
+  if (!_config.haste) {
+    const mainHandRef = _config.attacks.find(a => a.isPactWeapon) ?? _config.attacks[0];
+    _config.haste = {
+      enabled: false,
+      extraAttack: mainHandRef
+        ? {
+            name: 'Haste Attack',
+            weapon: { ...mainHandRef.weapon },
+            isPactWeapon: mainHandRef.isPactWeapon,
+            useAbilityMod: mainHandRef.useAbilityMod,
+            useSharpshooter: mainHandRef.useSharpshooter,
+            order: 3,
+          }
+        : {
+            name: 'Haste Attack',
+            weapon: { damageDice: '1d6', magicBonus: 0 },
+            isPactWeapon: true,
+            useAbilityMod: true,
+            useSharpshooter: true,
+            order: 3,
+          },
+    };
+  }
+
+  const haste = _config.haste;
+
+  setChecked('cfg-haste', haste.enabled);
+
+  const subEl = document.getElementById('haste-sub');
+  if (subEl) subEl.style.display = haste.enabled ? '' : 'none';
+
+  // Render the single haste attack card
+  const container = document.getElementById('haste-attack-card');
+  if (!container) return;
+
+  const atk = haste.extraAttack;
+  container.innerHTML = `
+    <div class="attack-card">
+      <div class="attack-header">
+        <span class="attack-num">Haste Attack</span>
+      </div>
+      <div class="field-row">
+        <label>Name</label>
+        <input type="text" class="input-text haste-name" value="${escapeHtml(atk.name)}" />
+      </div>
+      <div class="field-row">
+        <label>Damage Dice</label>
+        <select class="input-select haste-dice">
+          ${['1d4','1d6','1d8','1d10','1d12','2d6'].map(d =>
+            `<option value="${d}" ${d === atk.weapon.damageDice ? 'selected' : ''}>${d}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Magic Bonus</label>
+        <select class="input-select haste-magic">
+          ${[0,1,2,3].map(b =>
+            `<option value="${b}" ${b === atk.weapon.magicBonus ? 'selected' : ''}>+${b}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Uses Ability Mod</label>
+        <input type="checkbox" class="haste-abilmod" ${atk.useAbilityMod ? 'checked' : ''} />
+      </div>
+      <div class="field-row">
+        <label>Special Weapon (Pact/etc)</label>
+        <input type="checkbox" class="haste-pact" ${atk.isPactWeapon ? 'checked' : ''} />
+      </div>
+    </div>
+  `;
+
+  container.querySelector('.haste-name')?.addEventListener('input', (e) => {
+    _config.haste.extraAttack.name = (e.target as HTMLInputElement).value;
+    emit();
+  });
+  container.querySelector('.haste-dice')?.addEventListener('change', (e) => {
+    _config.haste.extraAttack.weapon.damageDice = (e.target as HTMLSelectElement).value;
+    emit();
+  });
+  container.querySelector('.haste-magic')?.addEventListener('change', (e) => {
+    _config.haste.extraAttack.weapon.magicBonus = parseInt((e.target as HTMLSelectElement).value);
+    emit();
+  });
+  container.querySelector('.haste-abilmod')?.addEventListener('change', (e) => {
+    _config.haste.extraAttack.useAbilityMod = (e.target as HTMLInputElement).checked;
+    emit();
+  });
+  container.querySelector('.haste-pact')?.addEventListener('change', (e) => {
+    _config.haste.extraAttack.isPactWeapon = (e.target as HTMLInputElement).checked;
+    emit();
+  });
+}
+
 function renderRidersList(): void {
   const container = document.getElementById('riders-list')!;
   container.innerHTML = '';
@@ -414,6 +513,13 @@ function bindStaticListeners(): void {
   bind('cfg-actionsurge-uses', 'change', v => {
     if (!_config.actionSurge) return;
     _config.actionSurge.usesPerRest = parseInt(v);
+  });
+
+  // Haste
+  bindCheck('cfg-haste', c => {
+    if (!_config.haste) renderHasteSection(); // ensure initialized
+    _config.haste.enabled = c;
+    renderHasteSection();
   });
 
   // Add surge attack (mirrors main hand attacks)
