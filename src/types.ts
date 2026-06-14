@@ -83,6 +83,11 @@ export interface ActionSurgeConfig {
   usesPerRest: number;           // 1 at levels 2-16, 2 at level 17+
 }
 
+export interface HasteConfig {
+  enabled: boolean;
+  extraAttack: AttackConfig;  // The single extra attack granted by Haste (one weapon attack only)
+}
+
 export interface CharacterConfig {
   name: string;
   level: number;
@@ -96,6 +101,7 @@ export interface CharacterConfig {
   riders: RiderConfig[];
   advantageSources: AdvantageSourcesConfig;
   actionSurge: ActionSurgeConfig;
+  haste: HasteConfig;
 }
 
 // ============================================================

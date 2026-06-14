@@ -23,6 +23,7 @@ export interface SimOptions {
   forceAdvantageAtk1?: boolean;
   forceAdvantageAll?: boolean;
   useActionSurge?: boolean;
+  useHaste?: boolean;
 }
 
 export interface RoundResult {
@@ -43,6 +44,7 @@ export function simulateRound(
     forceAdvantageAtk1 = false,
     forceAdvantageAll = false,
     useActionSurge = false,
+    useHaste = false,
   } = opts;
 
   const hl = config.feats.halflingLucky;
@@ -56,11 +58,17 @@ export function simulateRound(
   const normalAttacks = [...config.attacks].sort((a, b) => a.order - b.order);
 
   let attacks: AttackConfig[];
-  if (useActionSurge && config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) {
+  if ((useActionSurge && config.actionSurge?.enabled && config.actionSurge.extraAttacks.length > 0) ||
+      (useHaste && config.haste?.enabled)) {
     const mainAttacks = normalAttacks.filter(a => a.isPactWeapon);
     const offHandAttacks = normalAttacks.filter(a => !a.isPactWeapon);
-    const surgeAttacks = config.actionSurge.extraAttacks;
-    attacks = [...mainAttacks, ...surgeAttacks, ...offHandAttacks];
+    const surgeAttacks = (useActionSurge && config.actionSurge?.enabled)
+      ? config.actionSurge.extraAttacks
+      : [];
+    const hasteAttacks = (useHaste && config.haste?.enabled)
+      ? [config.haste.extraAttack]
+      : [];
+    attacks = [...mainAttacks, ...surgeAttacks, ...hasteAttacks, ...offHandAttacks];
   } else {
     attacks = normalAttacks;
   }
