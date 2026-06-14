@@ -15,10 +15,27 @@ import { analyzeSurprise } from './analysis/surprise.js';
 import type { WorkerRequest, WorkerProgress, WorkerResult, MonteCarloResult, MookSimResult } from './types.js';
 
 import crossbowPreset from './presets/crossbow-champion.json';
+import berserkerPreset from './presets/berserker-gwm-pam.json';
+import vengPaladinPreset from './presets/vengeance-paladin-smite.json';
+import shadowMonkPreset from './presets/shadow-monk-nick-flurry.json';
+
+// ============================================================
+// Presets map  (key matches <option value="..."> in index.html)
+// ============================================================
+
+const PRESETS: Record<string, CharacterConfig> = {
+  'crossbow-champion': crossbowPreset as unknown as CharacterConfig,
+  'berserker-gwm-pam': berserkerPreset as unknown as CharacterConfig,
+  'vengeance-paladin-smite': vengPaladinPreset as unknown as CharacterConfig,
+  'shadow-monk-nick-flurry': shadowMonkPreset as unknown as CharacterConfig,
+};
 
 // ============================================================
 // State
 // ============================================================
+
+/** Whether the config was loaded from localStorage (= "Custom") or the default preset. */
+let configFromLocalStorage = !!localStorage.getItem('dnd-dpr-config');
 
 let config: CharacterConfig = loadConfig();
 
@@ -55,7 +72,7 @@ function loadConfig(): CharacterConfig {
       // fall through to preset
     }
   }
-  return applyPreset(crossbowPreset as unknown as CharacterConfig);
+  return applyPreset(PRESETS['crossbow-champion']);
 }
 
 function applyPreset(preset: CharacterConfig): CharacterConfig {
@@ -660,6 +677,12 @@ function getCurrentActiveTab(): TabId {
 // Import/Export
 // ============================================================
 
+/** Sync the preset <select> to the given value without firing 'change'. */
+function setPresetDropdown(value: string): void {
+  const sel = document.getElementById('preset-select') as HTMLSelectElement | null;
+  if (sel) sel.value = value;
+}
+
 function exportConfig(): void {
   const json = JSON.stringify(config, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -679,6 +702,7 @@ function importConfig(file: File): void {
       config = applyPreset(parsed);
       updateSidebarConfig(config);
       localStorage.setItem('dnd-dpr-config', JSON.stringify(config));
+      setPresetDropdown('custom');
       scheduleRefresh();
     } catch {
       alert('Invalid JSON config file');
@@ -812,6 +836,7 @@ function init(): void {
 
   initSidebar(config, (updatedConfig) => {
     config = updatedConfig;
+    setPresetDropdown('custom');
     scheduleRefresh();
   });
 
@@ -830,8 +855,10 @@ function init(): void {
   // Preset selector
   document.getElementById('preset-select')?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
-    if (val === 'crossbow') {
-      config = applyPreset(crossbowPreset as unknown as CharacterConfig);
+    if (val === 'custom') return; // nothing to load; user stays on current config
+    const preset = PRESETS[val];
+    if (preset) {
+      config = applyPreset(preset);
       updateSidebarConfig(config);
       localStorage.setItem('dnd-dpr-config', JSON.stringify(config));
       scheduleRefresh();
@@ -860,6 +887,9 @@ function init(): void {
 
   // Initial render
   scheduleRefresh('dpr-curve');
+
+  // Sync dropdown: saved configs are "Custom"; fresh defaults are crossbow-champion
+  setPresetDropdown(configFromLocalStorage ? 'custom' : 'crossbow-champion');
 }
 
 document.addEventListener('DOMContentLoaded', init);

@@ -1,0 +1,88 @@
+{
+  "name": "Berserker Barbarian — GWM/PAM Glaive (Level 12)",
+  "level": 12,
+  "proficiencyBonus": 4,
+  "abilityMod": 5,
+  "fightingStyle": { "type": "none", "bonus": 0 },
+  "critRange": 20,
+  "attacks": [
+    {
+      "name": "Glaive 1",
+      "weapon": { "damageDice": "1d10", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 1
+    },
+    {
+      "name": "Glaive 2",
+      "weapon": { "damageDice": "1d10", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 2
+    },
+    {
+      "name": "PAM Butt (Bonus Action)",
+      "weapon": { "damageDice": "1d4", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 3
+    }
+  ],
+  "feats": {
+    "sharpshooter": false,
+    "gwm": true,
+    "piercer": { "enabled": false, "die": "1d10", "doublesOnCrit": false, "puncture": false, "punctureDie": 10 },
+    "lucky": { "enabled": false, "points": 0 },
+    "halflingLucky": false,
+    "crossbowExpert": false
+  },
+  "weaponMastery": {
+    "vex": false
+  },
+  "riders": [
+    {
+      "name": "Rage Damage",
+      "damage": "3",
+      "doublesOnCrit": false,
+      "condition": "onEveryHit",
+      "placement": "firstAvailable",
+      "requiresBonusAction": false,
+      "perTurnLimit": 0,
+      "enabled": true
+    },
+    {
+      "name": "Brutal Strike",
+      "damage": "2d10",
+      "doublesOnCrit": false,
+      "condition": "firstHitPerTurn",
+      "placement": "firstAvailable",
+      "requiresBonusAction": false,
+      "perTurnLimit": 1,
+      "enabled": true
+    }
+  ],
+  "advantageSources": {
+    "surprise": false,
+    "luckyOnAtk1": false,
+    "flanking": true
+  },
+  "actionSurge": {
+    "enabled": false,
+    "extraAttacks": [],
+    "usesPerRest": 0
+  },
+  "haste": {
+    "enabled": false,
+    "extraAttack": {
+      "name": "Haste Glaive",
+      "weapon": { "damageDice": "1d10", "magicBonus": 1 },
+      "isPactWeapon": false,
+      "useAbilityMod": true,
+      "useSharpshooter": true,
+      "order": 3
+    }
+  }
+}
