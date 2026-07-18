@@ -38,6 +38,7 @@ function renderFromConfig(): void {
   // Feats
   setChecked('cfg-sharpshooter', _config.feats.sharpshooter || _config.feats.gwm);
   setChecked('cfg-halflinglucky', _config.feats.halflingLucky);
+  setChecked('cfg-elvenaccuracy', _config.feats.elvenAccuracy);
   setChecked('cfg-lucky', _config.feats.lucky.enabled);
   setVal('cfg-luckypoints', _config.feats.lucky.points);
   setChecked('cfg-piercer', _config.feats.piercer.enabled);
@@ -484,6 +485,7 @@ function bindStaticListeners(): void {
   // Feats
   bindCheck('cfg-sharpshooter', c => { _config.feats.sharpshooter = c; _config.feats.gwm = false; });
   bindCheck('cfg-halflinglucky', c => { _config.feats.halflingLucky = c; });
+  bindCheck('cfg-elvenaccuracy', c => { _config.feats.elvenAccuracy = c; });
   bindCheck('cfg-lucky', c => {
     _config.feats.lucky.enabled = c;
     toggleSubFields();

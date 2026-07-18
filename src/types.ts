@@ -35,6 +35,7 @@ export interface FeatsConfig {
   piercer: PiercerConfig;
   lucky: LuckyConfig;
   halflingLucky: boolean;
+  elvenAccuracy: boolean;
   crossbowExpert: boolean;
 }
 

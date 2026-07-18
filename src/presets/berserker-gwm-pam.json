@@ -34,6 +34,7 @@
   "feats": {
     "sharpshooter": false,
     "gwm": true,
+    "elvenAccuracy": false,
     "piercer": { "enabled": false, "die": "1d10", "doublesOnCrit": false, "puncture": false, "punctureDie": 10 },
     "lucky": { "enabled": false, "points": 0 },
     "halflingLucky": false,

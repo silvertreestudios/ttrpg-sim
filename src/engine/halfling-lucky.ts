@@ -35,12 +35,12 @@ export function straightDist(halflingLucky: boolean): D20Dist {
   return { prob, cdf };
 }
 
-/** Build advantage distribution from a base straight dist */
-export function advantageDist(base: D20Dist): D20Dist {
+/** Build a take-the-highest distribution from a base straight dist. */
+export function advantageDist(base: D20Dist, rollCount = 2): D20Dist {
   const prob = new Array(21).fill(0);
-  // P(max = k) = CDF(k)^2 - CDF(k-1)^2
+  // P(max = k) = CDF(k)^n - CDF(k-1)^n
   for (let k = 1; k <= 20; k++) {
-    prob[k] = base.cdf[k] * base.cdf[k] - base.cdf[k - 1] * base.cdf[k - 1];
+    prob[k] = Math.pow(base.cdf[k], rollCount) - Math.pow(base.cdf[k - 1], rollCount);
   }
 
   const cdf = new Array(21).fill(0);
@@ -70,10 +70,10 @@ export function disadvantageDist(base: D20Dist): D20Dist {
 export type AdvantageState = 'normal' | 'advantage' | 'disadvantage';
 
 /** Get the distribution for a given advantage state and halfling lucky setting */
-export function getD20Dist(advState: AdvantageState, halflingLucky: boolean): D20Dist {
+export function getD20Dist(advState: AdvantageState, halflingLucky: boolean, elvenAccuracy = false): D20Dist {
   const base = straightDist(halflingLucky);
   if (advState === 'normal') return base;
-  if (advState === 'advantage') return advantageDist(base);
+  if (advState === 'advantage') return advantageDist(base, elvenAccuracy ? 3 : 2);
   return disadvantageDist(base);
 }
 

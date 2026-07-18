@@ -48,6 +48,7 @@ export function simulateRound(
   } = opts;
 
   const hl = config.feats.halflingLucky;
+  const elvenAccuracy = config.feats.elvenAccuracy;
   const critRange = config.critRange;
   const prof = config.proficiencyBonus;
   const abilMod = config.abilityMod;
@@ -104,7 +105,7 @@ export function simulateRound(
     // Roll d20
     let d20Roll: number;
     if (forceAdvantageAll || hasAdvantage) {
-      d20Roll = rollD20Advantage(hl);
+      d20Roll = rollD20Advantage(hl, elvenAccuracy);
     } else {
       d20Roll = rollD20(hl);
     }
@@ -332,6 +333,7 @@ export function runMookSim(
   const { simCount, mookAC, mookHP, hasSurprise } = opts;
 
   const hl = config.feats.halflingLucky;
+  const elvenAccuracy = config.feats.elvenAccuracy;
   const critRange = config.critRange;
   const prof = config.proficiencyBonus;
   const abilMod = config.abilityMod;
@@ -365,7 +367,7 @@ export function runMookSim(
       if (atk.useAbilityMod) hitBonus += abilMod;
       if (useSS) hitBonus -= 5;
 
-      const d20Roll = hasAdvantage ? rollD20Advantage(hl) : rollD20(hl);
+      const d20Roll = hasAdvantage ? rollD20Advantage(hl, elvenAccuracy) : rollD20(hl);
       const isCrit = d20Roll >= critRange;
       const isHit = isCrit || (d20Roll !== 1 && d20Roll + hitBonus >= mookAC);
 

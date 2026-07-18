@@ -50,6 +50,7 @@ export function calcExpectedDPR(
   } = opts;
 
   const hl = config.feats.halflingLucky;
+  const elvenAccuracy = config.feats.elvenAccuracy;
   const critRange = config.critRange;
   const prof = config.proficiencyBonus;
   const abilMod = config.abilityMod;
@@ -95,7 +96,7 @@ export function calcExpectedDPR(
 
   // Compute distributions once — they don't depend on per-attack values
   const baseDist = straightDist(hl);
-  const advDistObj = advantageDist(baseDist);
+  const advDistObj = advantageDist(baseDist, elvenAccuracy ? 3 : 2);
 
   // Piercer Puncture tracking
   let punctureApplied = false;

@@ -82,11 +82,13 @@ export function rollD20HalflingLucky(): number {
   return r;
 }
 
-/** Roll d20 with advantage (two dice, take max), optionally Halfling Lucky */
-export function rollD20Advantage(halflingLucky: boolean): number {
+/** Roll d20 with advantage, optionally using Elven Accuracy's third die. */
+export function rollD20Advantage(halflingLucky: boolean, elvenAccuracy = false): number {
   const r1 = halflingLucky ? rollD20HalflingLucky() : rollDie(20);
   const r2 = halflingLucky ? rollD20HalflingLucky() : rollDie(20);
-  return Math.max(r1, r2);
+  if (!elvenAccuracy) return Math.max(r1, r2);
+  const r3 = halflingLucky ? rollD20HalflingLucky() : rollDie(20);
+  return Math.max(r1, r2, r3);
 }
 
 /** Roll d20 straight, optionally Halfling Lucky */

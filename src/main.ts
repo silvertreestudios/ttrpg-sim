@@ -4,6 +4,7 @@
 
 import './style.css';
 import type { CharacterConfig } from './types.js';
+import { normalizeConfig } from './config.js';
 import { initSidebar, updateSidebarConfig } from './ui/sidebar.js';
 import { initTabs, type TabId } from './ui/tabs.js';
 import { renderLineChart, renderBarChart, renderGroupedBar, renderCDFChart } from './ui/charts.js';
@@ -67,38 +68,16 @@ function loadConfig(): CharacterConfig {
   const saved = localStorage.getItem('dnd-dpr-config');
   if (saved) {
     try {
-      return JSON.parse(saved) as CharacterConfig;
+      return normalizeConfig(JSON.parse(saved) as CharacterConfig);
     } catch {
       // fall through to preset
     }
   }
-  return applyPreset(PRESETS['crossbow-champion']);
+  return normalizeConfig(PRESETS['crossbow-champion']);
 }
 
 function applyPreset(preset: CharacterConfig): CharacterConfig {
-  // Ensure all required fields have defaults
-  return {
-    ...preset,
-    attacks: preset.attacks.map(a => Object.assign(
-      { useSharpshooter: true },
-      a,
-    )),
-    riders: (preset.riders ?? []).map(r => Object.assign(
-      { enabled: true, placement: 'firstAvailable' as const, requiresBonusAction: false, perTurnLimit: 0 },
-      r,
-    )),
-    advantageSources: preset.advantageSources ?? {
-      surprise: false,
-      luckyOnAtk1: false,
-      flanking: false,
-    },
-    weaponMastery: preset.weaponMastery ?? { vex: false },
-    actionSurge: preset.actionSurge ?? {
-      enabled: false,
-      extraAttacks: [],
-      usesPerRest: 1,
-    },
-  };
+  return normalizeConfig(preset);
 }
 
 // ============================================================
