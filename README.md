@@ -34,6 +34,17 @@ npm run build    # production build to dist/
 npm run preview  # preview production build
 ```
 
+## Development verification
+
+Before submitting changes, run:
+
+```sh
+npm install
+npm run build
+```
+
+`npm run build` performs strict TypeScript checking and creates the production bundle in `dist/`.
+
 ## Deployment
 
 Push to `main` and GitHub Actions will auto-deploy to GitHub Pages via the included workflow (`.github/workflows/deploy.yml`).
