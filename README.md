@@ -43,7 +43,7 @@ npm install
 npm run build
 ```
 
-`npm run build` performs strict TypeScript checking and creates the production bundle.
+`npm run build` performs strict TypeScript checking and creates the production bundle in `dist/`.
 
 ## Deployment
 
