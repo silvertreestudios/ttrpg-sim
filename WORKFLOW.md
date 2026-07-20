@@ -37,12 +37,9 @@ agent:
   max_turns: 12
   max_retry_backoff_ms: 300000
 
-codex:
-  command: codex app-server
-  thread_sandbox: workspace-write
-  turn_timeout_ms: 3600000
-  read_timeout_ms: 5000
-  stall_timeout_ms: 300000
+copilot:
+  command: /usr/local/bin/symphony-copilot
+  token: $SYMPHONY_COPILOT_TOKEN
 
 coordination:
   lease_repository: issue
@@ -56,7 +53,7 @@ coordination:
 workers:
   profiles:
     smoke:
-      driver: codex
+      driver: copilot
       capabilities:
         - code
         - documentation

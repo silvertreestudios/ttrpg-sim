@@ -48,8 +48,9 @@ npm run build
 ## Experimental Symphony worker
 
 This repository includes `WORKFLOW.md` for isolated tests of the
-GitHub-native Symphony worker. It uses issue-only routing and does not consume
-the existing `agent:*` workflow.
+GitHub-native Symphony worker. It uses the GitHub Copilot driver, charges work
+against the worker operator's Copilot entitlement, uses issue-only routing,
+and does not consume the existing `agent:*` workflow.
 
 An issue is eligible only when it has both `symphony:test` and
 `symphony:test-ready`. Symphony replaces the status label with
@@ -61,13 +62,22 @@ From a configured Symphony host:
 
 ```sh
 export SYMPHONY_WORKSPACE_ROOT="$HOME/.local/share/symphony/ttrpg-sim"
+export SYMPHONY_COPILOT_TOKEN="$(gh auth token)"
 
 symphony validate --profile smoke WORKFLOW.md
 symphony doctor --profile smoke --auth-mode gh \
-  --isolation-executor /path/to/symphony-executor WORKFLOW.md
+  --network enabled \
+  --isolation-executor /path/to/symphony-executor \
+  --isolation-state-root /path/to/private/executor-state WORKFLOW.md
 symphony once --profile smoke --auth-mode gh \
-  --isolation-executor /path/to/symphony-executor WORKFLOW.md
+  --network enabled \
+  --isolation-executor /path/to/symphony-executor \
+  --isolation-state-root /path/to/private/executor-state WORKFLOW.md
 ```
+
+The workflow expects the SDK-compatible Copilot runtime at
+`/usr/local/bin/symphony-copilot`. Supply an OAuth user token through
+`SYMPHONY_COPILOT_TOKEN`; do not put it in `WORKFLOW.md`.
 
 Use only disposable test issues and review the generated pull request before
 merging.
