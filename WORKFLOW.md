@@ -35,6 +35,9 @@ hooks:
 agent:
   max_concurrent_agents: 1
   max_turns: 12
+  max_attempts: 5
+  max_resume_attempts: 3
+  blocked_state: Blocked
   max_retry_backoff_ms: 300000
 
 copilot:
