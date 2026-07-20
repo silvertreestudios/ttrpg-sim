@@ -36,6 +36,7 @@ export interface FeatsConfig {
   lucky: LuckyConfig;
   halflingLucky: boolean;
   crossbowExpert: boolean;
+  elvenAccuracy: boolean; // Roll an extra d20 (triple advantage) whenever advantage is in effect
 }
 
 export type RiderCondition =
