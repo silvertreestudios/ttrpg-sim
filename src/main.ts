@@ -79,6 +79,7 @@ function applyPreset(preset: CharacterConfig): CharacterConfig {
   // Ensure all required fields have defaults
   return {
     ...preset,
+    feats: { ...preset.feats, elvenAccuracy: preset.feats.elvenAccuracy ?? false },
     attacks: preset.attacks.map(a => Object.assign(
       { useSharpshooter: true },
       a,
