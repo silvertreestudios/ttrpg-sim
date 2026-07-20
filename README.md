@@ -82,6 +82,9 @@ The workflow expects the SDK-compatible Copilot runtime at
 Use only disposable test issues and review the generated pull request before
 merging.
 
+See [`docs/symphony-smoke.md`](docs/symphony-smoke.md) for the evidence
+checklist expected from a successful smoke run.
+
 ## Deployment
 
 Push to `main` and GitHub Actions will auto-deploy to GitHub Pages via the included workflow (`.github/workflows/deploy.yml`).
