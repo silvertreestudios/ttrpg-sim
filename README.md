@@ -45,6 +45,33 @@ npm run build
 
 `npm run build` performs strict TypeScript checking and creates the production bundle in `dist/`.
 
+## Experimental Symphony worker
+
+This repository includes `WORKFLOW.md` for isolated tests of the
+GitHub-native Symphony worker. It uses issue-only routing and does not consume
+the existing `agent:*` workflow.
+
+An issue is eligible only when it has both `symphony:test` and
+`symphony:test-ready`. Symphony replaces the status label with
+`symphony:test-working` and then `symphony:test-review`; generated pull
+requests use `symphony:test-generated` and branches use
+`symphony/test-work/*`.
+
+From a configured Symphony host:
+
+```sh
+export SYMPHONY_WORKSPACE_ROOT="$HOME/.local/share/symphony/ttrpg-sim"
+
+symphony validate --profile smoke WORKFLOW.md
+symphony doctor --profile smoke --auth-mode gh \
+  --isolation-executor /path/to/symphony-executor WORKFLOW.md
+symphony once --profile smoke --auth-mode gh \
+  --isolation-executor /path/to/symphony-executor WORKFLOW.md
+```
+
+Use only disposable test issues and review the generated pull request before
+merging.
+
 ## Deployment
 
 Push to `main` and GitHub Actions will auto-deploy to GitHub Pages via the included workflow (`.github/workflows/deploy.yml`).
