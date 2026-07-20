@@ -50,6 +50,24 @@ export function advantageDist(base: D20Dist): D20Dist {
   return { prob, cdf };
 }
 
+/**
+ * Build super-advantage (Elven Accuracy) distribution from a base straight dist.
+ * Elven Accuracy rolls a third d20 whenever advantage applies, keeping the highest of 3.
+ *   P(max = k) = CDF(k)^3 - CDF(k-1)^3
+ */
+export function superAdvantageDist(base: D20Dist): D20Dist {
+  const prob = new Array(21).fill(0);
+  for (let k = 1; k <= 20; k++) {
+    prob[k] = Math.pow(base.cdf[k], 3) - Math.pow(base.cdf[k - 1], 3);
+  }
+
+  const cdf = new Array(21).fill(0);
+  cdf[0] = 0;
+  for (let k = 1; k <= 20; k++) cdf[k] = cdf[k - 1] + prob[k];
+
+  return { prob, cdf };
+}
+
 /** Build disadvantage distribution from a base straight dist */
 export function disadvantageDist(base: D20Dist): D20Dist {
   const prob = new Array(21).fill(0);
@@ -70,10 +88,14 @@ export function disadvantageDist(base: D20Dist): D20Dist {
 export type AdvantageState = 'normal' | 'advantage' | 'disadvantage';
 
 /** Get the distribution for a given advantage state and halfling lucky setting */
-export function getD20Dist(advState: AdvantageState, halflingLucky: boolean): D20Dist {
+export function getD20Dist(
+  advState: AdvantageState,
+  halflingLucky: boolean,
+  elvenAccuracy: boolean = false,
+): D20Dist {
   const base = straightDist(halflingLucky);
   if (advState === 'normal') return base;
-  if (advState === 'advantage') return advantageDist(base);
+  if (advState === 'advantage') return elvenAccuracy ? superAdvantageDist(base) : advantageDist(base);
   return disadvantageDist(base);
 }
 
