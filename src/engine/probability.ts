@@ -19,6 +19,7 @@ import {
   type HitCritMiss,
   straightDist,
   advantageDist,
+  tripleAdvantageDist,
 } from './halfling-lucky.js';
 
 /** Options to override per-calculation */
@@ -95,7 +96,7 @@ export function calcExpectedDPR(
 
   // Compute distributions once — they don't depend on per-attack values
   const baseDist = straightDist(hl);
-  const advDistObj = advantageDist(baseDist);
+  const advDistObj = config.feats.elvenAccuracy ? tripleAdvantageDist(baseDist) : advantageDist(baseDist);
 
   // Piercer Puncture tracking
   let punctureApplied = false;

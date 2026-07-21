@@ -36,6 +36,7 @@ export interface FeatsConfig {
   lucky: LuckyConfig;
   halflingLucky: boolean;
   crossbowExpert: boolean;
+  elvenAccuracy: boolean;
 }
 
 export type RiderCondition =

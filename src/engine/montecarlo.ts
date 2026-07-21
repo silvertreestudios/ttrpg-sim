@@ -11,6 +11,7 @@ import {
   rollExprCrit,
   rollD20,
   rollD20Advantage,
+  rollD20TripleAdvantage,
 } from './dice.js';
 
 export interface SimOptions {
@@ -104,7 +105,7 @@ export function simulateRound(
     // Roll d20
     let d20Roll: number;
     if (forceAdvantageAll || hasAdvantage) {
-      d20Roll = rollD20Advantage(hl);
+      d20Roll = config.feats.elvenAccuracy ? rollD20TripleAdvantage(hl) : rollD20Advantage(hl);
     } else {
       d20Roll = rollD20(hl);
     }
@@ -365,7 +366,9 @@ export function runMookSim(
       if (atk.useAbilityMod) hitBonus += abilMod;
       if (useSS) hitBonus -= 5;
 
-      const d20Roll = hasAdvantage ? rollD20Advantage(hl) : rollD20(hl);
+      const d20Roll = hasAdvantage
+        ? (config.feats.elvenAccuracy ? rollD20TripleAdvantage(hl) : rollD20Advantage(hl))
+        : rollD20(hl);
       const isCrit = d20Roll >= critRange;
       const isHit = isCrit || (d20Roll !== 1 && d20Roll + hitBonus >= mookAC);
 
