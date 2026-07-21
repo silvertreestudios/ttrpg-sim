@@ -56,7 +56,8 @@ An issue is eligible only when it has both `symphony:test` and
 `symphony:test-ready`. Symphony replaces the status label with
 `symphony:test-working` and then `symphony:test-review`; generated pull
 requests use `symphony:test-generated` and branches use
-`symphony/test-work/*`.
+`symphony/test-work/*`. The `symphony:test-working` label signals that
+implementation has begun on the issue.
 
 From a configured Symphony host:
 
