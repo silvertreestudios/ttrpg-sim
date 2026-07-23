@@ -82,6 +82,10 @@ The workflow expects the SDK-compatible Copilot runtime at
 Use only disposable test issues and review the generated pull request before
 merging.
 
+Before approving, reviewers should confirm that the issue has a visible work
+plan and that the generated pull request reports its changes, verification,
+and remaining risks.
+
 ## Deployment
 
 Push to `main` and GitHub Actions will auto-deploy to GitHub Pages via the included workflow (`.github/workflows/deploy.yml`).
