@@ -43,6 +43,7 @@ function renderFromConfig(): void {
   setChecked('cfg-piercer', _config.feats.piercer.enabled);
   setVal('cfg-piercerdie', _config.feats.piercer.die);
   setChecked('cfg-xbowexpert', _config.feats.crossbowExpert);
+  setChecked('cfg-elvenaccuracy', _config.feats.elvenAccuracy);
   setChecked('cfg-vex', _config.weaponMastery.vex);
 
   // Advantage
@@ -495,6 +496,7 @@ function bindStaticListeners(): void {
   });
   bind('cfg-piercerdie', 'change', v => { _config.feats.piercer.die = v; });
   bindCheck('cfg-xbowexpert', c => { _config.feats.crossbowExpert = c; });
+  bindCheck('cfg-elvenaccuracy', c => { _config.feats.elvenAccuracy = c; });
   bindCheck('cfg-vex', c => { _config.weaponMastery.vex = c; });
 
   // Advantage

@@ -29,7 +29,8 @@
     "piercer": { "enabled": false, "die": "1d6", "doublesOnCrit": false, "puncture": false, "punctureDie": 6 },
     "lucky": { "enabled": false, "points": 0 },
     "halflingLucky": false,
-    "crossbowExpert": false
+    "crossbowExpert": false,
+    "elvenAccuracy": false
   },
   "weaponMastery": {
     "vex": false

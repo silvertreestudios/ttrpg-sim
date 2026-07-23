@@ -89,6 +89,18 @@ export function rollD20Advantage(halflingLucky: boolean): number {
   return Math.max(r1, r2);
 }
 
+/**
+ * Roll d20 with Elven Accuracy (three dice, take max), optionally Halfling Lucky.
+ * Elven Accuracy upgrades advantage to "triple advantage" — roll an extra d20
+ * and keep the highest of the three.
+ */
+export function rollD20TripleAdvantage(halflingLucky: boolean): number {
+  const r1 = halflingLucky ? rollD20HalflingLucky() : rollDie(20);
+  const r2 = halflingLucky ? rollD20HalflingLucky() : rollDie(20);
+  const r3 = halflingLucky ? rollD20HalflingLucky() : rollDie(20);
+  return Math.max(r1, r2, r3);
+}
+
 /** Roll d20 straight, optionally Halfling Lucky */
 export function rollD20(halflingLucky: boolean): number {
   return halflingLucky ? rollD20HalflingLucky() : rollDie(20);
